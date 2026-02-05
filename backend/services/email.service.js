@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 const APPS_SCRIPT_URL = process.env.APPS_SCRIPT_URL;
 
 // Verificar configuración
