@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wysaro - Social Networks</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="form-container">
+        <div class="progress-bar">
+            <div class="progress" style="width: 50%;"></div>
+        </div>
+        
+        <form id="formPage1">
+            <h1 class="main-title">Welcome to Wysaro, <span id="companyName" contenteditable="true" class="editable-company">Company Name</span>!</h1>
+            
+            <h2>Social Networks</h2>
+            <p class="subtitle">Let's start by filling out all your social networks</p>
+            
+            <div class="form-group">
+                <label for="facebook">Facebook</label>
+                <input type="url" id="facebook" name="facebook" placeholder="https://facebook.com/yourpage">
+            </div>
+            
+            <div class="form-group">
+                <label for="instagram">Instagram</label>
+                <input type="url" id="instagram" name="instagram" placeholder="https://instagram.com/yourpage">
+            </div>
+            
+            <div class="form-group">
+                <label for="twitter">X (Twitter)</label>
+                <input type="url" id="twitter" name="twitter" placeholder="https://x.com/yourpage">
+            </div>
+            
+            <div class="form-group">
+                <label for="other">Other</label>
+                <input type="url" id="other" name="other" placeholder="https://yourwebsite.com">
+            </div>
+            
+            <div id="socialNetworkError" class="error-message" style="display: none;">
+                ⚠️ Por favor, completa al menos una red social para continuar
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn-next" id="btnNext">Next →</button>
+            </div>
+        </form>
+    </div>
+    
+    <script src="js/form-handler.js"></script>
+    <script src="js/validation.js"></script>
+    <script src="js/navigation.js"></script>
+</body>
+</html>
