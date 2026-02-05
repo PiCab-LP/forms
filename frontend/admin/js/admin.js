@@ -1,7 +1,9 @@
 const API_URL = 'https://forms-wliu.onrender.com/api/admin';
 
+
 let currentPage = 1;
 let searchTimeout;
+
 
 // Cargar datos al iniciar
 window.addEventListener('DOMContentLoaded', () => {
@@ -16,6 +18,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }, 500);
     });
 });
+
 
 // Cargar estadísticas
 async function loadStats() {
@@ -33,6 +36,7 @@ async function loadStats() {
         console.error('Error loading stats:', error);
     }
 }
+
 
 // Cargar formularios
 async function loadForms(page = 1, search = '') {
@@ -52,6 +56,7 @@ async function loadForms(page = 1, search = '') {
         `;
     }
 }
+
 
 // Renderizar tabla de formularios
 function renderFormsTable(forms) {
@@ -85,6 +90,7 @@ function renderFormsTable(forms) {
     `).join('');
 }
 
+
 // Renderizar paginación
 function renderPagination(pagination) {
     const paginationDiv = document.getElementById('pagination');
@@ -109,10 +115,13 @@ function renderPagination(pagination) {
     paginationDiv.innerHTML = html;
 }
 
+
 // Ver detalles de un formulario
 function viewForm(token) {
-    window.location.href = `form-details.html?token=${token}`;
+    // ✅ CORREGIDO: agregar /admin/ en la ruta
+    window.location.href = `/admin/form-details.html?token=${token}`;
 }
+
 
 // Eliminar formulario
 async function deleteForm(token) {
@@ -140,10 +149,12 @@ async function deleteForm(token) {
     }
 }
 
+
 // Exportar a CSV
 function exportCSV() {
     window.open(`${API_URL}/export/csv`, '_blank');
 }
+
 
 // Refrescar datos
 function refreshData() {
