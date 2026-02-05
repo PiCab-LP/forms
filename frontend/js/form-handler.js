@@ -1,5 +1,5 @@
 // Configuración del API
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://forms-wliu.onrender.com/api/form';
 
 // Almacenamiento temporal de datos entre páginas
 class FormDataManager {

@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000/api/admin';
+const API_URL = 'https://forms-wliu.onrender.com/api/admin';
 
 let currentPage = 1;
 let searchTimeout;
