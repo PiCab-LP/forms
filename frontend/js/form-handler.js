@@ -1,6 +1,7 @@
 // Configuración del API
 const API_URL = 'https://forms-wliu.onrender.com/api/form';
 
+
 // Almacenamiento temporal de datos entre páginas
 class FormDataManager {
     constructor() {
@@ -28,20 +29,24 @@ class FormDataManager {
     }
 }
 
+
 const formManager = new FormDataManager();
+
 
 // Verificar si estamos editando (hay token en URL)
 const urlParams = new URLSearchParams(window.location.search);
 const editToken = urlParams.get('token');
+
 
 // Si hay token, cargar datos existentes
 if (editToken) {
     loadExistingFormData(editToken);
 }
 
+
 async function loadExistingFormData(token) {
     try {
-        const response = await fetch(`${API_URL}/form/get/${token}`);
+        const response = await fetch(`${API_URL}/get/${token}`);
         const data = await response.json();
         
         if (data.success) {
@@ -62,6 +67,7 @@ async function loadExistingFormData(token) {
         alert('Error loading form data');
     }
 }
+
 
 function fillFormFields(data) {
     const currentPage = window.location.pathname.includes('page2') ? 'page2' : 'page1';
@@ -97,6 +103,7 @@ function fillFormFields(data) {
     }
 }
 
+
 function fillManagerFields(managerNum, data) {
     document.getElementById(`username_${managerNum}`).value = data.username || '';
     document.getElementById(`fullname_${managerNum}`).value = data.fullname || '';
@@ -104,6 +111,7 @@ function fillManagerFields(managerNum, data) {
     document.getElementById(`email_${managerNum}`).value = data.email || '';
     document.getElementById(`password_${managerNum}`).value = data.password || '';
 }
+
 
 // Manejar envío del formulario final (página 2)
 if (document.getElementById('formPage2')) {
@@ -130,9 +138,11 @@ if (document.getElementById('formPage2')) {
     });
 }
 
+
 async function submitForm(formData, editToken = null) {
     try {
-        const endpoint = editToken ? '/form/update' : '/form/submit';
+        // ✅ CORREGIDO: rutas sin /form/ duplicado
+        const endpoint = editToken ? '/update' : '/submit';
         
         console.log('Enviando formulario con datos:', formData); // Debug
         
@@ -167,6 +177,7 @@ async function submitForm(formData, editToken = null) {
         alert('Error submitting form. Please try again.');
     }
 }
+
 
 
 function showSuccessModal(token, editLink, formData) {
@@ -206,6 +217,7 @@ function showSuccessModal(token, editLink, formData) {
 }
 
 
+
 function getFormData(formId) {
     const form = document.getElementById(formId);
     const formData = new FormData(form);
@@ -217,6 +229,7 @@ function getFormData(formId) {
     
     return data;
 }
+
 
 function showEditMode() {
     const banner = document.createElement('div');
