@@ -1,6 +1,6 @@
 const Form = require('../models/form.model');
 const { generateToken } = require('../utils/token-generator');
-
+const emailService = require('../services/email.service');
 
 // Guardar nuevo formulario
 exports.submitForm = async (req, res) => {
@@ -22,7 +22,7 @@ exports.submitForm = async (req, res) => {
         const newForm = new Form({
             token,
             formData,
-            email: email, // Email del primer manager
+            email: email,
             expiresAt,
             currentVersion: 1,
             metadata: {
@@ -43,6 +43,20 @@ exports.submitForm = async (req, res) => {
         
         const editLink = `${process.env.FRONTEND_URL}/?token=${token}`;
         
+        // Enviar emails
+        const managers = formData.page2?.managers || [];
+        const companyName = formData.page1?.companyName || 'N/A';
+        
+        // Email al usuario (asíncrono, no bloquea la respuesta)
+        emailService.sendEditLinkEmail(email, companyName, editLink, managers)
+            .then(() => console.log('✅ Email enviado al usuario:', email))
+            .catch(err => console.error('❌ Error enviando email al usuario:', err));
+        
+        // Email al admin (asíncrono, no bloquea la respuesta)
+        emailService.sendAdminNotification(companyName, email, token, managers)
+            .then(() => console.log('✅ Notificación enviada al admin'))
+            .catch(err => console.error('❌ Error enviando notificación al admin:', err));
+        
         res.json({
             success: true,
             token,
@@ -60,7 +74,6 @@ exports.submitForm = async (req, res) => {
         });
     }
 };
-
 
 // Obtener datos para editar
 exports.getForm = async (req, res) => {
@@ -93,7 +106,6 @@ exports.getForm = async (req, res) => {
         });
     }
 };
-
 
 // Actualizar formulario existente
 exports.updateForm = async (req, res) => {
@@ -153,7 +165,6 @@ exports.updateForm = async (req, res) => {
         });
     }
 };
-
 
 // Obtener historial completo
 exports.getFormHistory = async (req, res) => {

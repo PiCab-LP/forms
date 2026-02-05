@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wysaro Admin Dashboard</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo-section">
+                <img src="../assets/images/wysaro-isologo-black.png" alt="Wysaro Gaming" class="admin-logo">
+                <h2>Admin Panel</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="#" class="nav-item" onclick="exportCSV()">
+                    <span>📥</span> Export CSV
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="dashboard-header">
+                <h1>Forms Dashboard</h1>
+                <div class="header-actions">
+                    <input type="text" id="searchInput" placeholder="Search by company, email or token..." class="search-input">
+                    <button onclick="refreshData()" class="btn-refresh">🔄 Refresh</button>
+                </div>
+            </header>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📝</div>
+                    <div class="stat-info">
+                        <h3 id="totalForms">0</h3>
+                        <p>Total Forms</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-info">
+                        <h3 id="formsThisMonth">0</h3>
+                        <p>This Month</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✏️</div>
+                    <div class="stat-info">
+                        <h3 id="editedForms">0</h3>
+                        <p>Edited Forms</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-info">
+                        <h3 id="avgEdits">0</h3>
+                        <p>Avg. Edits</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Forms Table -->
+            <div class="table-container">
+                <table class="forms-table">
+                    <thead>
+                        <tr>
+                            <th>Company Name</th>
+                            <th>Email</th>
+                            <th>Created At</th>
+                            <th>Edits</th>
+                            <th>Version</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="formsTableBody">
+                        <tr>
+                            <td colspan="6" class="loading">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" id="pagination"></div>
+        </main>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>
