@@ -1,6 +1,7 @@
 const Form = require('../models/form.model');
 const { generateToken } = require('../utils/token-generator');
 
+
 // Guardar nuevo formulario
 exports.submitForm = async (req, res) => {
     try {
@@ -15,10 +16,13 @@ exports.submitForm = async (req, res) => {
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 30);
         
+        // Obtener el email del primer manager
+        const email = formData.page2?.managers?.[0]?.email || 'no-email@provided.com';
+        
         const newForm = new Form({
             token,
             formData,
-            email: formData.page1.email,
+            email: email, // Email del primer manager
             expiresAt,
             currentVersion: 1,
             metadata: {
@@ -51,10 +55,12 @@ exports.submitForm = async (req, res) => {
         console.error('Error al guardar formulario:', error);
         res.status(500).json({
             success: false,
-            message: 'Error al guardar el formulario'
+            message: 'Error al guardar el formulario',
+            error: error.message
         });
     }
 };
+
 
 // Obtener datos para editar
 exports.getForm = async (req, res) => {
@@ -87,6 +93,7 @@ exports.getForm = async (req, res) => {
         });
     }
 };
+
 
 // Actualizar formulario existente
 exports.updateForm = async (req, res) => {
@@ -122,6 +129,12 @@ exports.updateForm = async (req, res) => {
         form.lastEditedAt = new Date();
         form.editCount += 1;
         
+        // Actualizar email si cambió el email del primer manager
+        const newEmail = formData.page2?.managers?.[0]?.email;
+        if (newEmail) {
+            form.email = newEmail;
+        }
+        
         await form.save();
         
         res.json({
@@ -140,6 +153,7 @@ exports.updateForm = async (req, res) => {
         });
     }
 };
+
 
 // Obtener historial completo
 exports.getFormHistory = async (req, res) => {

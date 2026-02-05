@@ -17,7 +17,9 @@
         </div>
         
         <form id="formPage1">
-            <h1 class="main-title">Welcome to Wysaro, <span id="companyName" contenteditable="true" class="editable-company">Company Name</span>!</h1>
+            <h1 class="main-title">
+                Welcome to Wysaro, <span class="editable-company" id="companyName" contenteditable="true">Company Name</span>!
+            </h1>
             
             <h2>Social Networks</h2>
             <p class="subtitle">Let's start by filling out all your social networks</p>
@@ -55,5 +57,30 @@
     <script src="js/form-handler.js"></script>
     <script src="js/validation.js"></script>
     <script src="js/navigation.js"></script>
+
+<script>
+    // Cargar nombre del gameroom al cargar la página
+    window.addEventListener('DOMContentLoaded', () => {
+        const gameroomName = localStorage.getItem('gameroomName');
+        
+        // Si no hay nombre, redirigir a welcome
+        if (!gameroomName) {
+            window.location.href = 'welcome.html';
+            return;
+        }
+        
+        // Actualizar el título con el nombre
+        const companyNameElement = document.getElementById('companyName');
+        if (companyNameElement) {
+            companyNameElement.textContent = gameroomName;
+            
+            // DESHABILITAR la edición
+            companyNameElement.contentEditable = 'false';
+            companyNameElement.style.cursor = 'default';
+            companyNameElement.style.borderBottom = 'none';
+        }
+    });
+</script>
+
 </body>
 </html>

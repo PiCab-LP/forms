@@ -466,3 +466,31 @@ h2 {
     margin-bottom: 30px;
     text-align: center;
 }
+
+/* Estilos para mensajes de validación en tiempo real */
+.input-help.error {
+    color: #dc3545 !important;
+}
+
+.input-help.success {
+    color: #28a745 !important;
+}
+
+/* Asegurar que el input-help siempre esté debajo del input */
+.form-group {
+    position: relative;
+}
+
+.form-group .input-help {
+    display: block;
+    margin-top: 5px;
+    font-size: 12px;
+    color: #999;
+    min-height: 16px; /* Reservar espacio para evitar saltos */
+}
+
+/* Para los inputs con password, ajustar padding si tienen botón de mostrar/ocultar */
+.form-group input[type="password"],
+.form-group input[type="text"] {
+    width: 100%;
+}
