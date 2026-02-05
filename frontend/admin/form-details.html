@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Form Details - Wysaro Admin</title>
-    <link rel="stylesheet" href="./css/admin.css">
+    <link rel="stylesheet" href="/admin/css/admin.css">
+
     <style>
         .details-container {
             max-width: 1200px;
@@ -190,7 +191,7 @@
 </head>
 <body>
     <div class="details-container">
-        <a href="index.html" class="back-button">
+        <a href="/admin/" class="back-button">
             ← Back to Dashboard
         </a>
 
@@ -404,7 +405,7 @@
 
         // Editar formulario
         function editForm() {
-            const editLink = `${window.location.origin}/index.html?token=${currentToken}`;
+            const editLink = `${window.location.origin}/?token=${currentToken}`;
             window.open(editLink, '_blank');
         }
 
