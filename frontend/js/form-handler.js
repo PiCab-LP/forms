@@ -1,7 +1,6 @@
 // Configuración del API
 const API_URL = 'https://forms-wliu.onrender.com/api/form';
 
-
 // Almacenamiento temporal de datos entre páginas
 class FormDataManager {
     constructor() {
@@ -29,25 +28,25 @@ class FormDataManager {
     }
 }
 
-
 const formManager = new FormDataManager();
-
 
 // Verificar si estamos editando (hay token en URL)
 const urlParams = new URLSearchParams(window.location.search);
 const editToken = urlParams.get('token');
-
 
 // Si hay token, cargar datos existentes
 if (editToken) {
     loadExistingFormData(editToken);
 }
 
-
 async function loadExistingFormData(token) {
     try {
+        console.log('Cargando datos del token:', token);
+        
         const response = await fetch(`${API_URL}/get/${token}`);
         const data = await response.json();
+        
+        console.log('Respuesta del servidor:', data);
         
         if (data.success) {
             // Guardar en localStorage para usar en todas las páginas
@@ -60,58 +59,89 @@ async function loadExistingFormData(token) {
             // Mostrar mensaje de edición
             showEditMode();
         } else {
-            alert('Form not found or expired');
+            console.error('Error del servidor:', data.message);
+            alert('Form not found or expired: ' + (data.message || ''));
         }
     } catch (error) {
         console.error('Error loading form data:', error);
-        alert('Error loading form data');
+        alert('Error loading form data. Please check your connection.');
     }
 }
 
-
 function fillFormFields(data) {
+    console.log('Llenando campos con datos:', data);
+    
     const currentPage = window.location.pathname.includes('page2') ? 'page2' : 'page1';
     const pageData = data[currentPage];
     
-    if (!pageData) return;
+    console.log('Página actual:', currentPage);
+    console.log('Datos de la página:', pageData);
+    
+    if (!pageData) {
+        console.warn('No hay datos para la página:', currentPage);
+        return;
+    }
     
     if (currentPage === 'page1') {
         // Llenar página 1
-        document.getElementById('companyName').textContent = pageData.companyName || 'Company Name';
+        const companyNameEl = document.getElementById('companyName');
+        if (companyNameEl && pageData.companyName) {
+            companyNameEl.textContent = pageData.companyName;
+        }
         
-        if (pageData.facebook) document.getElementById('facebook').value = pageData.facebook;
-        if (pageData.instagram) document.getElementById('instagram').value = pageData.instagram;
-        if (pageData.twitter) document.getElementById('twitter').value = pageData.twitter;
-        if (pageData.other) document.getElementById('other').value = pageData.other;
+        const facebookEl = document.getElementById('facebook');
+        if (facebookEl && pageData.facebook) facebookEl.value = pageData.facebook;
+        
+        const instagramEl = document.getElementById('instagram');
+        if (instagramEl && pageData.instagram) instagramEl.value = pageData.instagram;
+        
+        const twitterEl = document.getElementById('twitter');
+        if (twitterEl && pageData.twitter) twitterEl.value = pageData.twitter;
+        
+        const otherEl = document.getElementById('other');
+        if (otherEl && pageData.other) otherEl.value = pageData.other;
         
     } else if (currentPage === 'page2') {
         // Llenar página 2 (managers)
         if (pageData.managers && pageData.managers.length > 0) {
-            const container = document.getElementById('managersContainer');
-            container.innerHTML = ''; // Limpiar
+            console.log('Managers a cargar:', pageData.managers);
             
-            pageData.managers.forEach((manager, index) => {
-                if (index === 0) {
-                    // Llenar el primer manager
-                    fillManagerFields(1, manager);
+            const container = document.getElementById('managersContainer');
+            if (!container) {
+                console.error('No se encontró managersContainer');
+                return;
+            }
+            
+            // No limpiar el container, solo llenar el primer manager
+            fillManagerFields(1, pageData.managers[0]);
+            
+            // Agregar managers adicionales
+            for (let i = 1; i < pageData.managers.length; i++) {
+                if (typeof addManagerBlock === 'function') {
+                    addManagerBlock(i + 1, pageData.managers[i]);
                 } else {
-                    // Agregar managers adicionales
-                    addManagerBlock(index + 1, manager);
+                    console.error('La función addManagerBlock no existe');
                 }
-            });
+            }
         }
     }
 }
 
-
 function fillManagerFields(managerNum, data) {
-    document.getElementById(`username_${managerNum}`).value = data.username || '';
-    document.getElementById(`fullname_${managerNum}`).value = data.fullname || '';
-    document.getElementById(`role_${managerNum}`).value = data.role || '';
-    document.getElementById(`email_${managerNum}`).value = data.email || '';
-    document.getElementById(`password_${managerNum}`).value = data.password || '';
+    console.log(`Llenando manager #${managerNum}:`, data);
+    
+    const usernameEl = document.getElementById(`username_${managerNum}`);
+    const fullnameEl = document.getElementById(`fullname_${managerNum}`);
+    const roleEl = document.getElementById(`role_${managerNum}`);
+    const emailEl = document.getElementById(`email_${managerNum}`);
+    const passwordEl = document.getElementById(`password_${managerNum}`);
+    
+    if (usernameEl) usernameEl.value = data.username || '';
+    if (fullnameEl) fullnameEl.value = data.fullname || '';
+    if (roleEl) roleEl.value = data.role || '';
+    if (emailEl) emailEl.value = data.email || '';
+    if (passwordEl) passwordEl.value = data.password || '';
 }
-
 
 // Manejar envío del formulario final (página 2)
 if (document.getElementById('formPage2')) {
@@ -138,13 +168,11 @@ if (document.getElementById('formPage2')) {
     });
 }
 
-
 async function submitForm(formData, editToken = null) {
     try {
-        // ✅ CORREGIDO: rutas sin /form/ duplicado
         const endpoint = editToken ? '/update' : '/submit';
         
-        console.log('Enviando formulario con datos:', formData); // Debug
+        console.log('Enviando formulario con datos:', formData);
         
         const response = await fetch(`${API_URL}${endpoint}`, {
             method: 'POST',
@@ -160,8 +188,8 @@ async function submitForm(formData, editToken = null) {
         const result = await response.json();
         
         if (result.success) {
-            console.log('Formulario guardado exitosamente'); // Debug
-            console.log('Datos enviados:', formData); // Debug adicional
+            console.log('Formulario guardado exitosamente');
+            console.log('Datos enviados:', formData);
             
             // Guardar los datos en una variable global para el PDF
             window.savedFormData = formData;
@@ -178,8 +206,6 @@ async function submitForm(formData, editToken = null) {
     }
 }
 
-
-
 function showSuccessModal(token, editLink, formData) {
     const modal = document.getElementById('modalConfirmacion');
     const editLinkInput = document.getElementById('editLink');
@@ -187,7 +213,7 @@ function showSuccessModal(token, editLink, formData) {
     editLinkInput.value = editLink;
     modal.classList.remove('hidden');
     
-    console.log('Datos disponibles para PDF:', formData); // Debug
+    console.log('Datos disponibles para PDF:', formData);
     
     // Copiar link
     document.getElementById('copyLink').addEventListener('click', () => {
@@ -198,7 +224,7 @@ function showSuccessModal(token, editLink, formData) {
     
     // Descargar PDF con los datos que acabamos de enviar
     document.getElementById('downloadPDF').addEventListener('click', () => {
-        console.log('Generando PDF con datos:', formData); // Debug
+        console.log('Generando PDF con datos:', formData);
         generatePDF(formData);
     });
     
@@ -216,8 +242,6 @@ function showSuccessModal(token, editLink, formData) {
     });
 }
 
-
-
 function getFormData(formId) {
     const form = document.getElementById(formId);
     const formData = new FormData(form);
@@ -230,10 +254,21 @@ function getFormData(formId) {
     return data;
 }
 
-
 function showEditMode() {
+    const formContainer = document.querySelector('.form-container');
+    if (!formContainer) {
+        console.error('No se encontró .form-container');
+        return;
+    }
+    
+    // Verificar si ya existe el banner
+    if (document.querySelector('.edit-mode-banner')) {
+        return;
+    }
+    
     const banner = document.createElement('div');
     banner.className = 'edit-mode-banner';
     banner.textContent = '📝 Edit Mode - You are modifying an existing form';
-    document.querySelector('.form-container').prepend(banner);
+    banner.style.cssText = 'background: #ffc107; color: #000; padding: 10px; text-align: center; font-weight: bold; margin-bottom: 20px; border-radius: 5px;';
+    formContainer.prepend(banner);
 }
