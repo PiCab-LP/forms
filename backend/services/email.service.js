@@ -3,11 +3,15 @@ const nodemailer = require('nodemailer');
 // Configurar transporter
 const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: false, // true para port 465, false para otros
+    port: parseInt(process.env.EMAIL_PORT),
+    secure: false,
+    family: 4, // ✅ Forzar IPv4
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
+    },
+    tls: {
+        rejectUnauthorized: false
     }
 });
 
