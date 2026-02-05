@@ -1,17 +1,11 @@
 const nodemailer = require('nodemailer');
 
-// Configurar transporter
+// Configurar transporter usando 'service' en lugar de host/port
 const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT),
-    secure: false,
-    family: 4, // ✅ Forzar IPv4
+    service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        rejectUnauthorized: false
     }
 });
 
@@ -37,7 +31,7 @@ const sendEditLinkEmail = async (email, companyName, editLink, managers) => {
         `).join('');
 
         const mailOptions = {
-            from: process.env.EMAIL_FROM,
+            from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
             to: email,
             subject: `✅ Welcome to Wysaro Gaming - ${companyName}`,
             html: `
@@ -123,7 +117,7 @@ const sendAdminNotification = async (companyName, email, token, managers) => {
         const adminLink = `${process.env.FRONTEND_URL}/admin/form-details.html?token=${token}`;
 
         const mailOptions = {
-            from: process.env.EMAIL_FROM,
+            from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
             to: process.env.ADMIN_EMAIL,
             subject: `🎉 New Form Submission - ${companyName}`,
             html: `
