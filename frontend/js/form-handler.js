@@ -1,6 +1,7 @@
 // Configuración del API
 const API_URL = 'https://forms-wliu.onrender.com/api/form';
 
+
 // Almacenamiento temporal de datos entre páginas
 class FormDataManager {
     constructor() {
@@ -28,16 +29,20 @@ class FormDataManager {
     }
 }
 
+
 const formManager = new FormDataManager();
+
 
 // Verificar si estamos editando (hay token en URL)
 const urlParams = new URLSearchParams(window.location.search);
 const editToken = urlParams.get('token');
 
+
 // Si hay token, cargar datos existentes
 if (editToken) {
     loadExistingFormData(editToken);
 }
+
 
 async function loadExistingFormData(token) {
     try {
@@ -68,6 +73,7 @@ async function loadExistingFormData(token) {
     }
 }
 
+
 function fillFormFields(data) {
     console.log('Llenando campos con datos:', data);
     
@@ -83,23 +89,23 @@ function fillFormFields(data) {
     }
     
     if (currentPage === 'page1') {
-        // Llenar página 1
+        // Llenar página 1 - SIEMPRE llenar los campos, incluso si están vacíos
         const companyNameEl = document.getElementById('companyName');
-        if (companyNameEl && pageData.companyName) {
-            companyNameEl.textContent = pageData.companyName;
+        if (companyNameEl) {
+            companyNameEl.textContent = pageData.companyName || '';
         }
         
         const facebookEl = document.getElementById('facebook');
-        if (facebookEl && pageData.facebook) facebookEl.value = pageData.facebook;
+        if (facebookEl) facebookEl.value = pageData.facebook || '';
         
         const instagramEl = document.getElementById('instagram');
-        if (instagramEl && pageData.instagram) instagramEl.value = pageData.instagram;
+        if (instagramEl) instagramEl.value = pageData.instagram || '';
         
         const twitterEl = document.getElementById('twitter');
-        if (twitterEl && pageData.twitter) twitterEl.value = pageData.twitter;
+        if (twitterEl) twitterEl.value = pageData.twitter || '';
         
         const otherEl = document.getElementById('other');
-        if (otherEl && pageData.other) otherEl.value = pageData.other;
+        if (otherEl) otherEl.value = pageData.other || '';
         
     } else if (currentPage === 'page2') {
         // Llenar página 2 (managers)
@@ -127,6 +133,7 @@ function fillFormFields(data) {
     }
 }
 
+
 function fillManagerFields(managerNum, data) {
     console.log(`Llenando manager #${managerNum}:`, data);
     
@@ -142,6 +149,7 @@ function fillManagerFields(managerNum, data) {
     if (emailEl) emailEl.value = data.email || '';
     if (passwordEl) passwordEl.value = data.password || '';
 }
+
 
 // Manejar envío del formulario final (página 2)
 if (document.getElementById('formPage2')) {
@@ -167,6 +175,7 @@ if (document.getElementById('formPage2')) {
         await submitForm(allFormData, editToken);
     });
 }
+
 
 async function submitForm(formData, editToken = null) {
     try {
@@ -206,6 +215,7 @@ async function submitForm(formData, editToken = null) {
     }
 }
 
+
 function showSuccessModal(token, editLink, formData) {
     const modal = document.getElementById('modalConfirmacion');
     const editLinkInput = document.getElementById('editLink');
@@ -242,6 +252,7 @@ function showSuccessModal(token, editLink, formData) {
     });
 }
 
+
 function getFormData(formId) {
     const form = document.getElementById(formId);
     const formData = new FormData(form);
@@ -253,6 +264,7 @@ function getFormData(formId) {
     
     return data;
 }
+
 
 function showEditMode() {
     const formContainer = document.querySelector('.form-container');
