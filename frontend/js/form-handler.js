@@ -42,17 +42,25 @@ if (editToken) {
 
 async function loadExistingFormData(token) {
     try {
-        console.log('Cargando datos del token:', token);
+        console.log('🔄 Cargando datos del token:', token);
         
         const response = await fetch(`${API_URL}/get/${token}`);
         const data = await response.json();
         
-        console.log('Respuesta del servidor:', data);
+        console.log('📥 Respuesta del servidor:', data);
         
         if (data.success) {
-            // Guardar en localStorage para usar en todas las páginas
+            // 🔥 IMPORTANTE: Limpiar localStorage antiguo PRIMERO
+            console.log('🧹 Limpiando localStorage antiguo...');
+            localStorage.removeItem('formData');
+            formManager.clearData();
+            
+            // Guardar datos FRESCOS del servidor
             localStorage.setItem('formData', JSON.stringify(data.formData));
             localStorage.setItem('editToken', token);
+            
+            console.log('✅ localStorage actualizado con datos del servidor');
+            console.log('📊 Datos guardados:', data.formData);
             
             // Pre-llenar campos de la página actual
             fillFormFields(data.formData);
@@ -60,11 +68,11 @@ async function loadExistingFormData(token) {
             // Mostrar mensaje de edición
             showEditMode();
         } else {
-            console.error('Error del servidor:', data.message);
+            console.error('❌ Error del servidor:', data.message);
             alert('Form not found or expired: ' + (data.message || ''));
         }
     } catch (error) {
-        console.error('Error loading form data:', error);
+        console.error('❌ Error loading form data:', error);
         alert('Error loading form data. Please check your connection.');
     }
 }
@@ -75,11 +83,11 @@ function fillFormFields(data) {
     const currentPage = window.location.pathname.includes('page2') ? 'page2' : 'page1';
     const pageData = data[currentPage];
     
-    console.log('Página actual:', currentPage);
-    console.log('Datos de la página:', pageData);
+    console.log('📄 Página actual:', currentPage);
+    console.log('📊 Datos de la página:', pageData);
     
     if (!pageData) {
-        console.warn('No hay datos para la página:', currentPage);
+        console.warn('⚠️ No hay datos para la página:', currentPage);
         return;
     }
     
@@ -97,7 +105,7 @@ function fillFormFields(data) {
         if (twitterEl) twitterEl.value = '';
         if (otherEl) otherEl.value = '';
         
-        console.log('✅ Campos reseteados a vacío');
+        console.log('🧹 Campos reseteados a vacío');
         
         // 🔥 TERCERO: Llenar con los valores del servidor
         if (companyNameEl) {
@@ -110,7 +118,7 @@ function fillFormFields(data) {
         if (otherEl) otherEl.value = pageData.other || '';
         
         // 🔥 DEBUG: Mostrar valores finales
-        console.log('✅ Campos llenados con valores:');
+        console.log('✅ Campos llenados con valores del servidor:');
         console.log('  Facebook:', facebookEl?.value || '[VACÍO]');
         console.log('  Instagram:', instagramEl?.value || '[VACÍO]');
         console.log('  Twitter:', twitterEl?.value || '[VACÍO]');
@@ -119,11 +127,11 @@ function fillFormFields(data) {
     } else if (currentPage === 'page2') {
         // Llenar página 2 (managers)
         if (pageData.managers && pageData.managers.length > 0) {
-            console.log('Managers a cargar:', pageData.managers);
+            console.log('👥 Managers a cargar:', pageData.managers);
             
             const container = document.getElementById('managersContainer');
             if (!container) {
-                console.error('No se encontró managersContainer');
+                console.error('❌ No se encontró managersContainer');
                 return;
             }
             
@@ -135,7 +143,7 @@ function fillFormFields(data) {
                 if (typeof addManagerBlock === 'function') {
                     addManagerBlock(i + 1, pageData.managers[i]);
                 } else {
-                    console.error('La función addManagerBlock no existe');
+                    console.error('❌ La función addManagerBlock no existe');
                 }
             }
         }
@@ -143,7 +151,7 @@ function fillFormFields(data) {
 }
 
 function fillManagerFields(managerNum, data) {
-    console.log(`Llenando manager #${managerNum}:`, data);
+    console.log(`👤 Llenando manager #${managerNum}:`, data);
     
     const usernameEl = document.getElementById(`username_${managerNum}`);
     const fullnameEl = document.getElementById(`fullname_${managerNum}`);
@@ -235,7 +243,7 @@ function showSuccessModal(token, editLink, formData) {
     editLinkInput.value = editLink;
     modal.classList.remove('hidden');
     
-    console.log('Datos disponibles para PDF:', formData);
+    console.log('📄 Datos disponibles para PDF:', formData);
     
     // Copiar link
     document.getElementById('copyLink').addEventListener('click', () => {
@@ -246,7 +254,7 @@ function showSuccessModal(token, editLink, formData) {
     
     // Descargar PDF con los datos que acabamos de enviar
     document.getElementById('downloadPDF').addEventListener('click', () => {
-        console.log('Generando PDF con datos:', formData);
+        console.log('📄 Generando PDF con datos:', formData);
         generatePDF(formData);
     });
     
@@ -279,7 +287,7 @@ function getFormData(formId) {
 function showEditMode() {
     const formContainer = document.querySelector('.form-container');
     if (!formContainer) {
-        console.error('No se encontró .form-container');
+        console.error('❌ No se encontró .form-container');
         return;
     }
     
