@@ -1,5 +1,6 @@
 // Navegación entre páginas
 
+
 // Botón "Next" en página 1
 if (document.getElementById('btnNext')) {
     document.getElementById('btnNext').addEventListener('click', () => {
@@ -19,13 +20,13 @@ if (document.getElementById('btnNext')) {
         // Actualizar localStorage con el nombre final
         localStorage.setItem('gameroomName', companyName);
         
-        // Guardar datos de página 1
+        // Guardar datos de página 1 - SIEMPRE incluir todos los campos, incluso vacíos
         const page1Data = {
             companyName: companyName,
-            facebook: document.getElementById('facebook').value.trim(),
-            instagram: document.getElementById('instagram').value.trim(),
-            twitter: document.getElementById('twitter').value.trim(),
-            other: document.getElementById('other').value.trim()
+            facebook: (document.getElementById('facebook')?.value || '').trim(),
+            instagram: (document.getElementById('instagram')?.value || '').trim(),
+            twitter: (document.getElementById('twitter')?.value || '').trim(),
+            other: (document.getElementById('other')?.value || '').trim()
         };
         
         formManager.savePageData(1, page1Data);
@@ -33,11 +34,12 @@ if (document.getElementById('btnNext')) {
         // Ir a página 2
         const editToken = localStorage.getItem('editToken');
         const nextPage = editToken 
-            ? `page2.html?token=${editToken}` 
-            : 'page2.html';
+            ? `page2?token=${editToken}` 
+            : 'page2';
         window.location.href = nextPage;
     });
 }
+
 
 // Botón "Back" en página 2
 if (document.getElementById('btnBack')) {
@@ -49,11 +51,12 @@ if (document.getElementById('btnBack')) {
         // Volver a página 1
         const editToken = localStorage.getItem('editToken');
         const prevPage = editToken 
-            ? `index.html?token=${editToken}` 
-            : 'index.html';
+            ? `/?token=${editToken}` 
+            : '/';
         window.location.href = prevPage;
     });
 }
+
 
 // Función para recolectar datos de managers (página 2)
 function getFormDataPage2() {
@@ -77,28 +80,39 @@ function getFormDataPage2() {
     return { managers };
 }
 
+
 // Cargar datos guardados al cargar la página
 window.addEventListener('DOMContentLoaded', () => {
     const currentPage = window.location.pathname.includes('page2') ? 2 : 1;
     
     if (currentPage === 1) {
-        // Cargar datos de página 1
+        // Cargar datos de página 1 - SIEMPRE cargar todos los campos
         const savedData = formManager.loadPageData(1);
         
-        if (savedData.companyName) {
-            document.getElementById('companyName').textContent = savedData.companyName;
+        const companyNameEl = document.getElementById('companyName');
+        if (companyNameEl && savedData.companyName) {
+            companyNameEl.textContent = savedData.companyName;
         }
-        if (savedData.facebook) {
-            document.getElementById('facebook').value = savedData.facebook;
+        
+        // Cargar campos de redes sociales, incluso si están vacíos
+        const facebookEl = document.getElementById('facebook');
+        if (facebookEl) {
+            facebookEl.value = savedData.facebook || '';
         }
-        if (savedData.instagram) {
-            document.getElementById('instagram').value = savedData.instagram;
+        
+        const instagramEl = document.getElementById('instagram');
+        if (instagramEl) {
+            instagramEl.value = savedData.instagram || '';
         }
-        if (savedData.twitter) {
-            document.getElementById('twitter').value = savedData.twitter;
+        
+        const twitterEl = document.getElementById('twitter');
+        if (twitterEl) {
+            twitterEl.value = savedData.twitter || '';
         }
-        if (savedData.other) {
-            document.getElementById('other').value = savedData.other;
+        
+        const otherEl = document.getElementById('other');
+        if (otherEl) {
+            otherEl.value = savedData.other || '';
         }
     }
     
@@ -123,6 +137,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+
 // Configurar funcionalidad de agregar managers
 function setupAddManagerButton() {
     const btnAddManager = document.getElementById('btnAddManager');
@@ -141,6 +156,7 @@ function setupAddManagerButton() {
         });
     }
 }
+
 
 // Agregar bloque de manager
 function addManagerBlock(managerNum, data = null) {
@@ -194,6 +210,7 @@ function addManagerBlock(managerNum, data = null) {
     container.appendChild(managerBlock);
 }
 
+
 // Remover manager
 function removeManager(button) {
     const managerBlock = button.closest('.manager-block');
@@ -228,6 +245,7 @@ function removeManager(button) {
     updateAddManagerButton();
 }
 
+
 // Actualizar estado del botón de agregar managers
 function updateAddManagerButton() {
     const btnAddManager = document.getElementById('btnAddManager');
@@ -241,6 +259,7 @@ function updateAddManagerButton() {
         btnAddManager.textContent = '+ I want another backend account';
     }
 }
+
 
 // Mostrar/ocultar password
 function togglePassword(managerNum) {
