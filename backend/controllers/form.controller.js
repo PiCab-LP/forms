@@ -2,6 +2,7 @@ const Form = require('../models/form.model');
 const { generateToken } = require('../utils/token-generator');
 const emailService = require('../services/email.service');
 
+
 // Guardar nuevo formulario
 exports.submitForm = async (req, res) => {
     try {
@@ -75,6 +76,7 @@ exports.submitForm = async (req, res) => {
     }
 };
 
+
 // Obtener datos para editar
 exports.getForm = async (req, res) => {
     try {
@@ -107,6 +109,7 @@ exports.getForm = async (req, res) => {
     }
 };
 
+
 // Actualizar formulario existente
 exports.updateForm = async (req, res) => {
     try {
@@ -124,19 +127,35 @@ exports.updateForm = async (req, res) => {
             });
         }
         
-        const changes = form.detectChanges(formData);
+        // Guardar datos anteriores para detectar cambios
+        const oldFormData = JSON.parse(JSON.stringify(form.formData));
+        
+        // IMPORTANTE: Hacer merge profundo permitiendo valores vacíos
+        const updatedFormData = {
+            page1: {
+                companyName: formData.page1?.companyName !== undefined ? formData.page1.companyName : form.formData.page1?.companyName,
+                facebook: formData.page1?.facebook !== undefined ? formData.page1.facebook : form.formData.page1?.facebook,
+                instagram: formData.page1?.instagram !== undefined ? formData.page1.instagram : form.formData.page1?.instagram,
+                twitter: formData.page1?.twitter !== undefined ? formData.page1.twitter : form.formData.page1?.twitter,
+                other: formData.page1?.other !== undefined ? formData.page1.other : form.formData.page1?.other,
+            },
+            page2: formData.page2 !== undefined ? formData.page2 : form.formData.page2
+        };
+        
+        // Detectar cambios mejorado
+        const changes = detectChanges(oldFormData, updatedFormData);
         const newVersion = form.currentVersion + 1;
         
         form.versions.push({
             versionNumber: newVersion,
-            formData: formData,
+            formData: updatedFormData,
             editedAt: new Date(),
             ipAddress: ipAddress,
             userAgent: userAgent,
             changes: changes
         });
         
-        form.formData = formData;
+        form.formData = updatedFormData;
         form.currentVersion = newVersion;
         form.lastEditedAt = new Date();
         form.editCount += 1;
@@ -165,6 +184,40 @@ exports.updateForm = async (req, res) => {
         });
     }
 };
+
+
+// Función mejorada para detectar cambios (maneja arrays de managers)
+function detectChanges(oldData, newData) {
+    const changes = {};
+
+    // Comparar page1 (social networks)
+    const page1Fields = ['companyName', 'facebook', 'instagram', 'twitter', 'other'];
+    page1Fields.forEach(field => {
+        const oldValue = oldData.page1?.[field] || '';
+        const newValue = newData.page1?.[field] || '';
+        
+        if (oldValue !== newValue) {
+            changes[`page1.${field}`] = {
+                old: oldValue,
+                new: newValue
+            };
+        }
+    });
+
+    // Comparar page2 (managers) - convertir a JSON para comparar arrays
+    const oldManagers = JSON.stringify(oldData.page2?.managers || []);
+    const newManagers = JSON.stringify(newData.page2?.managers || []);
+    
+    if (oldManagers !== newManagers) {
+        changes['page2.managers'] = {
+            old: `${(oldData.page2?.managers || []).length} manager(s)`,
+            new: `${(newData.page2?.managers || []).length} manager(s)`
+        };
+    }
+
+    return changes;
+}
+
 
 // Obtener historial completo
 exports.getFormHistory = async (req, res) => {
