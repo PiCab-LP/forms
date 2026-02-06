@@ -119,7 +119,7 @@ function renderPagination(pagination) {
 // Ver detalles de un formulario
 function viewForm(token) {
     // ✅ CORREGIDO: agregar /admin/ en la ruta
-    window.location.href = `/admin/form-details.html?token=${token}`;
+    window.location.href = `/admin/form-details?token=${token}`;
 }
 
 

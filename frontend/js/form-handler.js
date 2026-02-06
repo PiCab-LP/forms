@@ -238,7 +238,7 @@ function showSuccessModal(token, editLink, formData) {
         delete window.savedFormData;
         
         // Redirigir a página de agradecimiento
-        window.location.href = '/thank-you.html';
+        window.location.href = '/thank-you';
     });
 }
 

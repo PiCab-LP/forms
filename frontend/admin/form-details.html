@@ -254,7 +254,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             if (!currentToken) {
                 alert('No token provided');
-                window.location.href = 'index.html';
+                window.location.href = '/admin';
                 return;
             }
             loadFormDetails();
@@ -273,7 +273,7 @@
                     document.getElementById('formDetails').style.display = 'block';
                 } else {
                     alert('Form not found');
-                    window.location.href = 'index.html';
+                    window.location.href = '/admin';
                 }
             } catch (error) {
                 console.error('Error loading form details:', error);
@@ -424,7 +424,7 @@
 
                 if (data.success) {
                     alert('Form deleted successfully');
-                    window.location.href = 'index.html';
+                    window.location.href = '/admin';
                 } else {
                     alert('Error deleting form: ' + data.message);
                 }

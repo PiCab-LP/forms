@@ -40,7 +40,7 @@ const sendEditLinkEmail = async (email, companyName, editLink, managers) => {
 // Enviar notificación al admin
 const sendAdminNotification = async (companyName, email, token, managers) => {
     try {
-        const adminLink = `${process.env.FRONTEND_URL}/admin/form-details.html?token=${token}`;
+        const adminLink = `${process.env.FRONTEND_URL}/admin/form-details?token=${token}`;
         
         const response = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
