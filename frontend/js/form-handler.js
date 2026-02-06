@@ -237,8 +237,8 @@ function showSuccessModal(token, editLink, formData) {
         localStorage.removeItem('editToken');
         delete window.savedFormData;
         
-        // Recargar página sin token
-        window.location.href = window.location.origin + window.location.pathname;
+        // Redirigir a página de agradecimiento
+        window.location.href = '/thank-you.html';
     });
 }
 
