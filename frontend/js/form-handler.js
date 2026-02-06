@@ -43,8 +43,22 @@ if (editToken) {
 async function loadExistingFormData(token) {
     try {
         console.log('🔄 Cargando datos del token:', token);
+        console.log('📍 URL completa:', `${API_URL}/get/${token}`);
         
-        const response = await fetch(`${API_URL}/get/${token}`);
+        const response = await fetch(`${API_URL}/get/${token}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response ok:', response.ok);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         console.log('📥 Respuesta del servidor:', data);
@@ -72,10 +86,21 @@ async function loadExistingFormData(token) {
             alert('Form not found or expired: ' + (data.message || ''));
         }
     } catch (error) {
-        console.error('❌ Error loading form data:', error);
-        alert('Error loading form data. Please check your connection.');
+        console.error('❌ Error completo:', error);
+        console.error('❌ Error name:', error.name);
+        console.error('❌ Error message:', error.message);
+        
+        // Mensaje más específico
+        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+            alert('Cannot connect to server. Please check if the backend is running.');
+        } else if (error.message.includes('HTTP error')) {
+            alert('Server returned an error: ' + error.message);
+        } else {
+            alert('Error loading form data: ' + error.message);
+        }
     }
 }
+
 
 function fillFormFields(data) {
     console.log('🔄 fillFormFields llamada con datos:', data);
