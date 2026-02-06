@@ -27,7 +27,7 @@ app.use(mongoSanitize());
 // Rate limiting global (100 requests por 15 minutos)
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100,
+    max: 10000,
     message: { 
         success: false, 
         message: 'Too many requests, please try again later.' 
