@@ -1,6 +1,5 @@
 // Navegación entre páginas
 
-
 // Botón "Next" en página 1
 if (document.getElementById('btnNext')) {
     document.getElementById('btnNext').addEventListener('click', () => {
@@ -20,14 +19,25 @@ if (document.getElementById('btnNext')) {
         // Actualizar localStorage con el nombre final
         localStorage.setItem('gameroomName', companyName);
         
-        // Guardar datos de página 1 - SIEMPRE incluir todos los campos, incluso vacíos
+        // 🔥 CAPTURAR VALORES ACTUALES DEL DOM
+        const facebookEl = document.getElementById('facebook');
+        const instagramEl = document.getElementById('instagram');
+        const twitterEl = document.getElementById('twitter');
+        const otherEl = document.getElementById('other');
+        
         const page1Data = {
             companyName: companyName,
-            facebook: (document.getElementById('facebook')?.value || '').trim(),
-            instagram: (document.getElementById('instagram')?.value || '').trim(),
-            twitter: (document.getElementById('twitter')?.value || '').trim(),
-            other: (document.getElementById('other')?.value || '').trim()
+            facebook: facebookEl ? facebookEl.value.trim() : '',
+            instagram: instagramEl ? instagramEl.value.trim() : '',
+            twitter: twitterEl ? twitterEl.value.trim() : '',
+            other: otherEl ? otherEl.value.trim() : ''
         };
+        
+        console.log('🔍 VALORES CAPTURADOS AL HACER CLICK EN NEXT:');
+        console.log('  Facebook:', page1Data.facebook || '[VACÍO]');
+        console.log('  Instagram:', page1Data.instagram || '[VACÍO]');
+        console.log('  Twitter:', page1Data.twitter || '[VACÍO]');
+        console.log('  Other:', page1Data.other || '[VACÍO]');
         
         formManager.savePageData(1, page1Data);
         
@@ -39,7 +49,6 @@ if (document.getElementById('btnNext')) {
         window.location.href = nextPage;
     });
 }
-
 
 // Botón "Back" en página 2
 if (document.getElementById('btnBack')) {
@@ -56,7 +65,6 @@ if (document.getElementById('btnBack')) {
         window.location.href = prevPage;
     });
 }
-
 
 // Función para recolectar datos de managers (página 2)
 function getFormDataPage2() {
@@ -80,14 +88,26 @@ function getFormDataPage2() {
     return { managers };
 }
 
-
 // Cargar datos guardados al cargar la página
 window.addEventListener('DOMContentLoaded', () => {
     const currentPage = window.location.pathname.includes('page2') ? 2 : 1;
     
+    // 🔥 IMPORTANTE: Verificar si hay token en URL (modo edición)
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasEditToken = urlParams.get('token');
+    
     if (currentPage === 1) {
-        // Cargar datos de página 1 - SIEMPRE cargar todos los campos
+        // 🔥 Si hay token, NO cargar datos del localStorage
+        // Los datos ya fueron cargados por form-handler.js desde el servidor
+        if (hasEditToken) {
+            console.log('⏭️ Modo edición detectado, omitiendo carga desde localStorage');
+            return;
+        }
+        
+        // Cargar datos de página 1 - Solo si NO estamos en modo edición
         const savedData = formManager.loadPageData(1);
+        
+        console.log('📂 Cargando datos desde localStorage:', savedData);
         
         const companyNameEl = document.getElementById('companyName');
         if (companyNameEl && savedData.companyName) {
@@ -137,7 +157,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-
 // Configurar funcionalidad de agregar managers
 function setupAddManagerButton() {
     const btnAddManager = document.getElementById('btnAddManager');
@@ -156,7 +175,6 @@ function setupAddManagerButton() {
         });
     }
 }
-
 
 // Agregar bloque de manager
 function addManagerBlock(managerNum, data = null) {
@@ -210,7 +228,6 @@ function addManagerBlock(managerNum, data = null) {
     container.appendChild(managerBlock);
 }
 
-
 // Remover manager
 function removeManager(button) {
     const managerBlock = button.closest('.manager-block');
@@ -245,7 +262,6 @@ function removeManager(button) {
     updateAddManagerButton();
 }
 
-
 // Actualizar estado del botón de agregar managers
 function updateAddManagerButton() {
     const btnAddManager = document.getElementById('btnAddManager');
@@ -259,7 +275,6 @@ function updateAddManagerButton() {
         btnAddManager.textContent = '+ I want another backend account';
     }
 }
-
 
 // Mostrar/ocultar password
 function togglePassword(managerNum) {
