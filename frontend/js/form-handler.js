@@ -1,7 +1,6 @@
 // Configuración del API
 const API_URL = 'https://forms-wliu.onrender.com/api/form';
 
-
 // Almacenamiento temporal de datos entre páginas
 class FormDataManager {
     constructor() {
@@ -11,6 +10,7 @@ class FormDataManager {
     savePageData(page, data) {
         let allData = this.getAllData();
         allData[`page${page}`] = data;
+        console.log(`📦 GUARDANDO page${page} en localStorage:`, data);
         localStorage.setItem(this.storageKey, JSON.stringify(allData));
     }
     
@@ -29,20 +29,16 @@ class FormDataManager {
     }
 }
 
-
 const formManager = new FormDataManager();
-
 
 // Verificar si estamos editando (hay token en URL)
 const urlParams = new URLSearchParams(window.location.search);
 const editToken = urlParams.get('token');
 
-
 // Si hay token, cargar datos existentes
 if (editToken) {
     loadExistingFormData(editToken);
 }
-
 
 async function loadExistingFormData(token) {
     try {
@@ -73,9 +69,8 @@ async function loadExistingFormData(token) {
     }
 }
 
-
 function fillFormFields(data) {
-    console.log('Llenando campos con datos:', data);
+    console.log('🔄 fillFormFields llamada con datos:', data);
     
     const currentPage = window.location.pathname.includes('page2') ? 'page2' : 'page1';
     const pageData = data[currentPage];
@@ -89,23 +84,37 @@ function fillFormFields(data) {
     }
     
     if (currentPage === 'page1') {
-        // Llenar página 1 - SIEMPRE llenar los campos, incluso si están vacíos
+        // 🔥 PRIMERO: Obtener referencias a los elementos
         const companyNameEl = document.getElementById('companyName');
+        const facebookEl = document.getElementById('facebook');
+        const instagramEl = document.getElementById('instagram');
+        const twitterEl = document.getElementById('twitter');
+        const otherEl = document.getElementById('other');
+        
+        // 🔥 SEGUNDO: Resetear todos los campos a vacío
+        if (facebookEl) facebookEl.value = '';
+        if (instagramEl) instagramEl.value = '';
+        if (twitterEl) twitterEl.value = '';
+        if (otherEl) otherEl.value = '';
+        
+        console.log('✅ Campos reseteados a vacío');
+        
+        // 🔥 TERCERO: Llenar con los valores del servidor
         if (companyNameEl) {
             companyNameEl.textContent = pageData.companyName || '';
         }
         
-        const facebookEl = document.getElementById('facebook');
         if (facebookEl) facebookEl.value = pageData.facebook || '';
-        
-        const instagramEl = document.getElementById('instagram');
         if (instagramEl) instagramEl.value = pageData.instagram || '';
-        
-        const twitterEl = document.getElementById('twitter');
         if (twitterEl) twitterEl.value = pageData.twitter || '';
-        
-        const otherEl = document.getElementById('other');
         if (otherEl) otherEl.value = pageData.other || '';
+        
+        // 🔥 DEBUG: Mostrar valores finales
+        console.log('✅ Campos llenados con valores:');
+        console.log('  Facebook:', facebookEl?.value || '[VACÍO]');
+        console.log('  Instagram:', instagramEl?.value || '[VACÍO]');
+        console.log('  Twitter:', twitterEl?.value || '[VACÍO]');
+        console.log('  Other:', otherEl?.value || '[VACÍO]');
         
     } else if (currentPage === 'page2') {
         // Llenar página 2 (managers)
@@ -133,7 +142,6 @@ function fillFormFields(data) {
     }
 }
 
-
 function fillManagerFields(managerNum, data) {
     console.log(`Llenando manager #${managerNum}:`, data);
     
@@ -149,7 +157,6 @@ function fillManagerFields(managerNum, data) {
     if (emailEl) emailEl.value = data.email || '';
     if (passwordEl) passwordEl.value = data.password || '';
 }
-
 
 // Manejar envío del formulario final (página 2)
 if (document.getElementById('formPage2')) {
@@ -168,6 +175,8 @@ if (document.getElementById('formPage2')) {
         // Combinar todos los datos
         const allFormData = formManager.getAllData();
         
+        console.log('📋 Datos completos del formulario antes de enviar:', allFormData);
+        
         // Verificar si estamos editando
         const editToken = localStorage.getItem('editToken');
         
@@ -176,29 +185,33 @@ if (document.getElementById('formPage2')) {
     });
 }
 
-
 async function submitForm(formData, editToken = null) {
     try {
         const endpoint = editToken ? '/update' : '/submit';
         
-        console.log('Enviando formulario con datos:', formData);
+        const payload = {
+            formData: formData,
+            token: editToken
+        };
+        
+        console.log('🚀 ENVIANDO AL SERVIDOR:');
+        console.log('  Endpoint:', `${API_URL}${endpoint}`);
+        console.log('  Payload:', JSON.stringify(payload, null, 2));
         
         const response = await fetch(`${API_URL}${endpoint}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                formData: formData,
-                token: editToken
-            })
+            body: JSON.stringify(payload)
         });
         
         const result = await response.json();
         
+        console.log('📥 RESPUESTA DEL SERVIDOR:', result);
+        
         if (result.success) {
-            console.log('Formulario guardado exitosamente');
-            console.log('Datos enviados:', formData);
+            console.log('✅ Formulario guardado exitosamente');
             
             // Guardar los datos en una variable global para el PDF
             window.savedFormData = formData;
@@ -210,11 +223,10 @@ async function submitForm(formData, editToken = null) {
             alert('Error: ' + result.message);
         }
     } catch (error) {
-        console.error('Error submitting form:', error);
+        console.error('❌ Error submitting form:', error);
         alert('Error submitting form. Please try again.');
     }
 }
-
 
 function showSuccessModal(token, editLink, formData) {
     const modal = document.getElementById('modalConfirmacion');
@@ -252,7 +264,6 @@ function showSuccessModal(token, editLink, formData) {
     });
 }
 
-
 function getFormData(formId) {
     const form = document.getElementById(formId);
     const formData = new FormData(form);
@@ -264,7 +275,6 @@ function getFormData(formId) {
     
     return data;
 }
-
 
 function showEditMode() {
     const formContainer = document.querySelector('.form-container');
