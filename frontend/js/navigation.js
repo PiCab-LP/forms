@@ -3,10 +3,15 @@
 // Botón "Next" en página 1
 if (document.getElementById('btnNext')) {
     document.getElementById('btnNext').addEventListener('click', () => {
+        console.log('🖱️ ===== CLICK EN NEXT - INICIANDO CAPTURA =====');
+        
         // Validar que al menos una red social esté llena
         if (!validateSocialNetworks()) {
+            console.log('❌ Validación de redes sociales falló');
             return;
         }
+        
+        console.log('✅ Validación de redes sociales pasó');
         
         // Capturar el nombre de la compañía (puede ser editado o el del localStorage)
         let companyName = document.getElementById('companyName').textContent.trim();
@@ -15,6 +20,8 @@ if (document.getElementById('btnNext')) {
         if (!companyName || companyName === 'Company Name') {
             companyName = localStorage.getItem('gameroomName') || 'Company Name';
         }
+        
+        console.log('🏢 Company Name:', companyName);
         
         // Actualizar localStorage con el nombre final
         localStorage.setItem('gameroomName', companyName);
@@ -25,6 +32,18 @@ if (document.getElementById('btnNext')) {
         const twitterEl = document.getElementById('twitter');
         const otherEl = document.getElementById('other');
         
+        console.log('🔍 VERIFICANDO EXISTENCIA DE ELEMENTOS:');
+        console.log('  facebookEl existe:', !!facebookEl);
+        console.log('  instagramEl existe:', !!instagramEl);
+        console.log('  twitterEl existe:', !!twitterEl);
+        console.log('  otherEl existe:', !!otherEl);
+        
+        console.log('🔍 VALORES CRUDOS EN EL DOM (sin trim):');
+        console.log('  Facebook valor:', facebookEl ? `"${facebookEl.value}"` : 'ELEMENTO NO ENCONTRADO');
+        console.log('  Instagram valor:', instagramEl ? `"${instagramEl.value}"` : 'ELEMENTO NO ENCONTRADO');
+        console.log('  Twitter valor:', twitterEl ? `"${twitterEl.value}"` : 'ELEMENTO NO ENCONTRADO');
+        console.log('  Other valor:', otherEl ? `"${otherEl.value}"` : 'ELEMENTO NO ENCONTRADO');
+        
         const page1Data = {
             companyName: companyName,
             facebook: facebookEl ? facebookEl.value.trim() : '',
@@ -33,19 +52,29 @@ if (document.getElementById('btnNext')) {
             other: otherEl ? otherEl.value.trim() : ''
         };
         
-        console.log('🔍 VALORES CAPTURADOS AL HACER CLICK EN NEXT:');
+        console.log('🔍 DATOS CAPTURADOS DESPUÉS DE TRIM:');
         console.log('  Facebook:', page1Data.facebook || '[VACÍO]');
         console.log('  Instagram:', page1Data.instagram || '[VACÍO]');
         console.log('  Twitter:', page1Data.twitter || '[VACÍO]');
         console.log('  Other:', page1Data.other || '[VACÍO]');
         
+        console.log('📦 OBJETO COMPLETO page1Data:', JSON.stringify(page1Data, null, 2));
+        
         formManager.savePageData(1, page1Data);
+        
+        console.log('✅ Datos guardados en localStorage');
+        console.log('📂 Verificando guardado:', JSON.parse(localStorage.getItem('formData')));
         
         // Ir a página 2
         const editToken = localStorage.getItem('editToken');
         const nextPage = editToken 
             ? `page2?token=${editToken}` 
             : 'page2';
+        
+        console.log('🚀 Navegando a:', nextPage);
+        console.log('🔑 Edit token:', editToken || '[NO HAY TOKEN]');
+        console.log('🖱️ ===== FIN DE CAPTURA - NAVEGANDO =====');
+        
         window.location.href = nextPage;
     });
 }
@@ -53,6 +82,8 @@ if (document.getElementById('btnNext')) {
 // Botón "Back" en página 2
 if (document.getElementById('btnBack')) {
     document.getElementById('btnBack').addEventListener('click', () => {
+        console.log('⬅️ Click en Back');
+        
         // Guardar datos actuales de página 2 antes de retroceder
         const page2Data = getFormDataPage2();
         formManager.savePageData(2, page2Data);
@@ -90,57 +121,76 @@ function getFormDataPage2() {
 
 // Cargar datos guardados al cargar la página
 window.addEventListener('DOMContentLoaded', () => {
+    console.log('📄 DOMContentLoaded - Iniciando carga de página');
+    
     const currentPage = window.location.pathname.includes('page2') ? 2 : 1;
+    console.log('📍 Página actual:', currentPage === 1 ? 'page1' : 'page2');
     
     // 🔥 IMPORTANTE: Verificar si hay token en URL (modo edición)
     const urlParams = new URLSearchParams(window.location.search);
     const hasEditToken = urlParams.get('token');
+    
+    console.log('🔑 Token en URL:', hasEditToken || '[NO HAY TOKEN]');
     
     if (currentPage === 1) {
         // 🔥 Si hay token, NO cargar datos del localStorage
         // Los datos ya fueron cargados por form-handler.js desde el servidor
         if (hasEditToken) {
             console.log('⏭️ Modo edición detectado, omitiendo carga desde localStorage');
+            console.log('💡 Los datos serán cargados por form-handler.js desde el servidor');
             return;
         }
+        
+        console.log('📂 Cargando datos desde localStorage (nuevo formulario)');
         
         // Cargar datos de página 1 - Solo si NO estamos en modo edición
         const savedData = formManager.loadPageData(1);
         
-        console.log('📂 Cargando datos desde localStorage:', savedData);
+        console.log('📊 Datos cargados desde localStorage:', savedData);
         
         const companyNameEl = document.getElementById('companyName');
         if (companyNameEl && savedData.companyName) {
             companyNameEl.textContent = savedData.companyName;
+            console.log('✅ Company name cargado:', savedData.companyName);
         }
         
         // Cargar campos de redes sociales, incluso si están vacíos
         const facebookEl = document.getElementById('facebook');
         if (facebookEl) {
             facebookEl.value = savedData.facebook || '';
+            console.log('✅ Facebook cargado:', savedData.facebook || '[VACÍO]');
         }
         
         const instagramEl = document.getElementById('instagram');
         if (instagramEl) {
             instagramEl.value = savedData.instagram || '';
+            console.log('✅ Instagram cargado:', savedData.instagram || '[VACÍO]');
         }
         
         const twitterEl = document.getElementById('twitter');
         if (twitterEl) {
             twitterEl.value = savedData.twitter || '';
+            console.log('✅ Twitter cargado:', savedData.twitter || '[VACÍO]');
         }
         
         const otherEl = document.getElementById('other');
         if (otherEl) {
             otherEl.value = savedData.other || '';
+            console.log('✅ Other cargado:', savedData.other || '[VACÍO]');
         }
     }
     
     if (currentPage === 2) {
+        console.log('📋 Estamos en page2, cargando managers');
+        
         // Cargar datos de página 2 si existen
         const savedData = formManager.loadPageData(2);
         
+        console.log('📊 Datos de page2 desde localStorage:', savedData);
+        
         if (savedData.managers && savedData.managers.length > 0) {
+            console.log('👥 Cargando', savedData.managers.length, 'manager(s)');
+            
             // Si hay managers guardados, cargarlos
             const container = document.getElementById('managersContainer');
             container.innerHTML = '';
@@ -150,11 +200,15 @@ window.addEventListener('DOMContentLoaded', () => {
             });
             
             updateAddManagerButton();
+        } else {
+            console.log('ℹ️ No hay managers guardados en localStorage');
         }
         
         // Configurar botón para agregar managers
         setupAddManagerButton();
     }
+    
+    console.log('✅ DOMContentLoaded completado');
 });
 
 // Configurar funcionalidad de agregar managers
