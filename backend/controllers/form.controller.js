@@ -111,8 +111,13 @@ exports.getForm = async (req, res) => {
 
 
 // Actualizar formulario existente
+// Actualizar formulario existente
 exports.updateForm = async (req, res) => {
     try {
+        console.log('🔄 UPDATE FORM EJECUTADO');
+        console.log('📦 Token recibido:', req.body.token);
+        console.log('📊 Datos recibidos:', JSON.stringify(req.body.formData, null, 2));
+        
         const { token, formData } = req.body;
         
         const ipAddress = req.ip || req.connection.remoteAddress;
@@ -121,14 +126,19 @@ exports.updateForm = async (req, res) => {
         const form = await Form.findOne({ token });
         
         if (!form) {
+            console.error('❌ Formulario no encontrado con token:', token);
             return res.status(404).json({
                 success: false,
                 message: 'Formulario no encontrado o expirado'
             });
         }
         
+        console.log('✅ Formulario encontrado:', form._id);
+        
         // Guardar datos anteriores para detectar cambios
         const oldFormData = JSON.parse(JSON.stringify(form.formData));
+        
+        console.log('📋 Datos ANTES del update:', oldFormData);
         
         // IMPORTANTE: Hacer merge profundo permitiendo valores vacíos
         const updatedFormData = {
@@ -142,8 +152,12 @@ exports.updateForm = async (req, res) => {
             page2: formData.page2 !== undefined ? formData.page2 : form.formData.page2
         };
         
+        console.log('📋 Datos DESPUÉS del merge:', updatedFormData);
+        
         // Detectar cambios mejorado
         const changes = detectChanges(oldFormData, updatedFormData);
+        console.log('🔍 Cambios detectados:', changes);
+        
         const newVersion = form.currentVersion + 1;
         
         form.versions.push({
@@ -168,6 +182,8 @@ exports.updateForm = async (req, res) => {
         
         await form.save();
         
+        console.log('✅ Formulario actualizado exitosamente. Nueva versión:', newVersion);
+        
         res.json({
             success: true,
             message: 'Formulario actualizado exitosamente',
@@ -177,7 +193,7 @@ exports.updateForm = async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Error al actualizar formulario:', error);
+        console.error('❌ Error al actualizar formulario:', error);
         res.status(500).json({
             success: false,
             message: 'Error al actualizar el formulario'
