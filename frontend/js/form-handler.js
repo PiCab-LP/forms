@@ -35,9 +35,33 @@ const formManager = new FormDataManager();
 const urlParams = new URLSearchParams(window.location.search);
 const editToken = urlParams.get('token');
 
-// Si hay token, cargar datos existentes
+// Si hay token, cargar datos existentes SOLO en page1
 if (editToken) {
-    loadExistingFormData(editToken);
+    // 🔥 IMPORTANTE: Solo cargar datos del servidor en page1
+    // En page2, ya tenemos los datos actualizados que vienen de page1 en localStorage
+    const isPage2 = window.location.pathname.includes('page2');
+    
+    if (!isPage2) {
+        console.log('📥 Token detectado en page1, cargando datos del servidor');
+        loadExistingFormData(editToken);
+    } else {
+        console.log('⏭️ Token detectado en page2, usando datos del localStorage');
+        console.log('💡 Los datos de page1 ya están guardados en localStorage desde la navegación');
+        
+        // Guardar el token para el submit
+        localStorage.setItem('editToken', editToken);
+        
+        // Llenar campos de page2 con los datos del localStorage
+        const savedData = formManager.getAllData();
+        console.log('📊 Datos del localStorage para page2:', savedData);
+        
+        if (savedData.page2) {
+            fillFormFields(savedData);
+        }
+        
+        // Mostrar mensaje de edición
+        showEditMode();
+    }
 }
 
 async function loadExistingFormData(token) {
@@ -100,7 +124,6 @@ async function loadExistingFormData(token) {
         }
     }
 }
-
 
 function fillFormFields(data) {
     console.log('🔄 fillFormFields llamada con datos:', data);
