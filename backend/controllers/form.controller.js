@@ -2,7 +2,6 @@ const Form = require('../models/form.model');
 const { generateToken } = require('../utils/token-generator');
 const emailService = require('../services/email.service');
 
-
 // Guardar nuevo formulario
 exports.submitForm = async (req, res) => {
     try {
@@ -76,7 +75,6 @@ exports.submitForm = async (req, res) => {
     }
 };
 
-
 // Obtener datos para editar
 exports.getForm = async (req, res) => {
     try {
@@ -109,8 +107,6 @@ exports.getForm = async (req, res) => {
     }
 };
 
-
-// Actualizar formulario existente
 // Actualizar formulario existente
 exports.updateForm = async (req, res) => {
     try {
@@ -201,8 +197,7 @@ exports.updateForm = async (req, res) => {
     }
 };
 
-
-// Función mejorada para detectar cambios (maneja arrays de managers)
+// Función mejorada para detectar cambios (detalla cambios campo por campo en managers)
 function detectChanges(oldData, newData) {
     const changes = {};
 
@@ -214,26 +209,74 @@ function detectChanges(oldData, newData) {
         
         if (oldValue !== newValue) {
             changes[`page1.${field}`] = {
-                old: oldValue,
-                new: newValue
+                old: oldValue || '(empty)',
+                new: newValue || '(empty)'
             };
         }
     });
 
-    // Comparar page2 (managers) - convertir a JSON para comparar arrays
-    const oldManagers = JSON.stringify(oldData.page2?.managers || []);
-    const newManagers = JSON.stringify(newData.page2?.managers || []);
+    // Comparar page2 (managers) - MEJORADO: detalle específico campo por campo
+    const oldManagers = oldData.page2?.managers || [];
+    const newManagers = newData.page2?.managers || [];
     
-    if (oldManagers !== newManagers) {
-        changes['page2.managers'] = {
-            old: `${(oldData.page2?.managers || []).length} manager(s)`,
-            new: `${(newData.page2?.managers || []).length} manager(s)`
+    // Detectar cambios en cantidad de managers
+    if (oldManagers.length !== newManagers.length) {
+        changes['page2.managers.count'] = {
+            old: `${oldManagers.length} manager(s)`,
+            new: `${newManagers.length} manager(s)`
         };
+    }
+    
+    // Comparar cada manager campo por campo
+    const maxLength = Math.max(oldManagers.length, newManagers.length);
+    
+    for (let i = 0; i < maxLength; i++) {
+        const oldManager = oldManagers[i];
+        const newManager = newManagers[i];
+        
+        // Manager eliminado
+        if (oldManager && !newManager) {
+            changes[`page2.managers[${i}]`] = {
+                old: `${oldManager.fullname} (${oldManager.username}) - ${oldManager.role}`,
+                new: '(removed)'
+            };
+            continue;
+        }
+        
+        // Manager añadido
+        if (!oldManager && newManager) {
+            changes[`page2.managers[${i}]`] = {
+                old: '(new)',
+                new: `${newManager.fullname} (${newManager.username}) - ${newManager.role}`
+            };
+            continue;
+        }
+        
+        // Comparar campos individuales del manager
+        const managerFields = ['username', 'fullname', 'role', 'email', 'password'];
+        managerFields.forEach(field => {
+            const oldValue = oldManager[field] || '';
+            const newValue = newManager[field] || '';
+            
+            if (oldValue !== newValue) {
+                // Para password solo indicar que cambió, no mostrar el valor
+                if (field === 'password') {
+                    changes[`page2.managers[${i}].${field}`] = {
+                        old: oldValue ? '(hidden)' : '(empty)',
+                        new: newValue ? '(hidden)' : '(empty)'
+                    };
+                } else {
+                    changes[`page2.managers[${i}].${field}`] = {
+                        old: oldValue || '(empty)',
+                        new: newValue || '(empty)'
+                    };
+                }
+            }
+        });
     }
 
     return changes;
 }
-
 
 // Obtener historial completo
 exports.getFormHistory = async (req, res) => {
