@@ -31,38 +31,43 @@ class FormDataManager {
 
 const formManager = new FormDataManager();
 
-// Verificar si estamos editando (hay token en URL)
-const urlParams = new URLSearchParams(window.location.search);
-const editToken = urlParams.get('token');
-
-// Si hay token, cargar datos existentes SOLO en page1
-if (editToken) {
-    // 🔥 IMPORTANTE: Solo cargar datos del servidor en page1
-    // En page2, ya tenemos los datos actualizados que vienen de page1 en localStorage
-    const isPage2 = window.location.pathname.includes('page2');
+// 🔥 IMPORTANTE: Esperar a que el DOM esté listo antes de cargar datos
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('📄 DOM cargado, verificando token...');
     
-    if (!isPage2) {
-        console.log('📥 Token detectado en page1, cargando datos del servidor');
-        loadExistingFormData(editToken);
-    } else {
-        console.log('⏭️ Token detectado en page2, usando datos del localStorage');
-        console.log('💡 Los datos de page1 ya están guardados en localStorage desde la navegación');
+    // Verificar si estamos editando (hay token en URL)
+    const urlParams = new URLSearchParams(window.location.search);
+    const editToken = urlParams.get('token');
+    
+    // Si hay token, cargar datos existentes SOLO en page1
+    if (editToken) {
+        // 🔥 IMPORTANTE: Solo cargar datos del servidor en page1
+        // En page2, ya tenemos los datos actualizados que vienen de page1 en localStorage
+        const isPage2 = window.location.pathname.includes('page2');
         
-        // Guardar el token para el submit
-        localStorage.setItem('editToken', editToken);
-        
-        // Llenar campos de page2 con los datos del localStorage
-        const savedData = formManager.getAllData();
-        console.log('📊 Datos del localStorage para page2:', savedData);
-        
-        if (savedData.page2) {
-            fillFormFields(savedData);
+        if (!isPage2) {
+            console.log('📥 Token detectado en page1, cargando datos del servidor');
+            loadExistingFormData(editToken);
+        } else {
+            console.log('⏭️ Token detectado en page2, usando datos del localStorage');
+            console.log('💡 Los datos de page1 ya están guardados en localStorage desde la navegación');
+            
+            // Guardar el token para el submit
+            localStorage.setItem('editToken', editToken);
+            
+            // Llenar campos de page2 con los datos del localStorage
+            const savedData = formManager.getAllData();
+            console.log('📊 Datos del localStorage para page2:', savedData);
+            
+            if (savedData.page2) {
+                fillFormFields(savedData);
+            }
+            
+            // Mostrar mensaje de edición
+            showEditMode();
         }
-        
-        // Mostrar mensaje de edición
-        showEditMode();
     }
-}
+});
 
 async function loadExistingFormData(token) {
     try {
@@ -73,7 +78,9 @@ async function loadExistingFormData(token) {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            mode: 'cors',  // 🔥 AGREGAR ESTO
+            credentials: 'omit'  // 🔥 AGREGAR ESTO
         });
         
         console.log('📡 Response status:', response.status);
@@ -116,7 +123,8 @@ async function loadExistingFormData(token) {
         
         // Mensaje más específico
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-            alert('Cannot connect to server. Please check if the backend is running.');
+            // Mostrar modal de error amigable
+            showConnectionErrorModal(token);
         } else if (error.message.includes('HTTP error')) {
             alert('Server returned an error: ' + error.message);
         } else {
@@ -146,6 +154,13 @@ function fillFormFields(data) {
         const instagramEl = document.getElementById('instagram');
         const twitterEl = document.getElementById('twitter');
         const otherEl = document.getElementById('other');
+        
+        console.log('🔍 Verificando elementos del DOM:');
+        console.log('  companyName:', !!companyNameEl);
+        console.log('  facebook:', !!facebookEl);
+        console.log('  instagram:', !!instagramEl);
+        console.log('  twitter:', !!twitterEl);
+        console.log('  other:', !!otherEl);
         
         // 🔥 SEGUNDO: Resetear todos los campos a vacío
         if (facebookEl) facebookEl.value = '';
@@ -259,7 +274,8 @@ async function submitForm(formData, editToken = null) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(payload)
+            mode: 'cors',
+            credentials: 'omit'
         });
         
         const result = await response.json();
@@ -318,6 +334,44 @@ function showSuccessModal(token, editLink, formData) {
         // Redirigir a página de agradecimiento
         window.location.href = '/thank-you';
     });
+}
+
+function showConnectionErrorModal(token) {
+    const existingModal = document.getElementById('connectionErrorModal');
+    if (existingModal) existingModal.remove();
+    
+    const modal = document.createElement('div');
+    modal.id = 'connectionErrorModal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    `;
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 40px; border-radius: 12px; max-width: 500px; text-align: center;">
+            <div style="font-size: 60px; margin-bottom: 20px;">⚠️</div>
+            <h2 style="margin-bottom: 20px; color: #333;">Cannot Connect to Server</h2>
+            <p style="color: #666; margin-bottom: 30px; line-height: 1.6;">
+                Unable to load form data. This could be because:<br><br>
+                • The server is starting up (wait 30-60 seconds)<br>
+                • Network connection issue<br>
+                • CORS policy blocking the request
+            </p>
+            <button onclick="window.location.reload()" style="background: #007bff; color: white; border: none; padding: 12px 30px; border-radius: 6px; cursor: pointer; font-size: 16px;">
+                Retry Now
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
 }
 
 function getFormData(formId) {
