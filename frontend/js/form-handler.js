@@ -31,9 +31,9 @@ class FormDataManager {
 
 const formManager = new FormDataManager();
 
-// 🔥 IMPORTANTE: Esperar a que el DOM esté listo antes de cargar datos
+// 🔥 IMPORTANTE: Esperar a que el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('📄 DOM cargado, verificando token...');
+    console.log('📄 DOM cargado, inicializando...');
     
     // Verificar si estamos editando (hay token en URL)
     const urlParams = new URLSearchParams(window.location.search);
@@ -41,8 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Si hay token, cargar datos existentes SOLO en page1
     if (editToken) {
-        // 🔥 IMPORTANTE: Solo cargar datos del servidor en page1
-        // En page2, ya tenemos los datos actualizados que vienen de page1 en localStorage
         const isPage2 = window.location.pathname.includes('page2');
         
         if (!isPage2) {
@@ -50,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
             loadExistingFormData(editToken);
         } else {
             console.log('⏭️ Token detectado en page2, usando datos del localStorage');
-            console.log('💡 Los datos de page1 ya están guardados en localStorage desde la navegación');
             
             // Guardar el token para el submit
             localStorage.setItem('editToken', editToken);
@@ -67,6 +64,48 @@ document.addEventListener('DOMContentLoaded', () => {
             showEditMode();
         }
     }
+    
+    // 🔥 Manejar envío del formulario final (página 2)
+    const formPage2 = document.getElementById('formPage2');
+    if (formPage2) {
+        formPage2.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            console.log('📝 Submit de page2 iniciado');
+            
+            // Validar managers
+            if (typeof validateManagers === 'function' && !validateManagers()) {
+                console.log('❌ Validación de managers falló');
+                return;
+            }
+            
+            console.log('✅ Validación de managers pasó');
+            
+            // Recolectar datos de página 2
+            console.log('📊 Recolectando datos de page2...');
+            const page2Data = getFormDataPage2();
+            console.log('📦 Datos de page2 recolectados:', page2Data);
+            
+            formManager.savePageData(2, page2Data);
+            
+            // Combinar todos los datos
+            const allFormData = formManager.getAllData();
+            
+            console.log('📋 Datos completos del formulario antes de enviar:', allFormData);
+            console.log('🔍 Verificando estructura:');
+            console.log('  - page1 existe:', !!allFormData.page1);
+            console.log('  - page2 existe:', !!allFormData.page2);
+            console.log('  - page1 tiene datos:', allFormData.page1 ? Object.keys(allFormData.page1).length : 0);
+            console.log('  - page2 tiene datos:', allFormData.page2 ? Object.keys(allFormData.page2).length : 0);
+            
+            // Verificar si estamos editando
+            const editToken = localStorage.getItem('editToken');
+            console.log('🔑 Edit token:', editToken || '[NO HAY TOKEN]');
+            
+            // Enviar al backend
+            await submitForm(allFormData, editToken);
+        });
+    }
 });
 
 async function loadExistingFormData(token) {
@@ -79,8 +118,8 @@ async function loadExistingFormData(token) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            mode: 'cors',  // 🔥 AGREGAR ESTO
-            credentials: 'omit'  // 🔥 AGREGAR ESTO
+            mode: 'cors',
+            credentials: 'omit'
         });
         
         console.log('📡 Response status:', response.status);
@@ -123,8 +162,7 @@ async function loadExistingFormData(token) {
         
         // Mensaje más específico
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-            // Mostrar modal de error amigable
-            showConnectionErrorModal(token);
+            alert('Cannot connect to server. Please check if the backend is running.');
         } else if (error.message.includes('HTTP error')) {
             alert('Server returned an error: ' + error.message);
         } else {
@@ -229,31 +267,41 @@ function fillManagerFields(managerNum, data) {
     if (passwordEl) passwordEl.value = data.password || '';
 }
 
-// Manejar envío del formulario final (página 2)
-if (document.getElementById('formPage2')) {
-    document.getElementById('formPage2').addEventListener('submit', async (e) => {
-        e.preventDefault();
+// 🔥 NUEVA FUNCIÓN: Recolectar datos de página 2
+function getFormDataPage2() {
+    const managers = [];
+    const managerBlocks = document.querySelectorAll('.manager-block');
+    
+    console.log('📊 Recolectando datos de', managerBlocks.length, 'manager(s)');
+    
+    managerBlocks.forEach((block, index) => {
+        const managerNum = index + 1;
         
-        // Validar managers
-        if (!validateManagers()) {
+        const usernameEl = document.getElementById(`username_${managerNum}`);
+        const fullnameEl = document.getElementById(`fullname_${managerNum}`);
+        const roleEl = document.getElementById(`role_${managerNum}`);
+        const emailEl = document.getElementById(`email_${managerNum}`);
+        const passwordEl = document.getElementById(`password_${managerNum}`);
+        
+        if (!usernameEl || !fullnameEl || !roleEl || !emailEl || !passwordEl) {
+            console.error(`❌ No se encontraron todos los campos para manager #${managerNum}`);
             return;
         }
         
-        // Recolectar datos de página 2
-        const page2Data = getFormDataPage2();
-        formManager.savePageData(2, page2Data);
+        const manager = {
+            username: usernameEl.value.trim(),
+            fullname: fullnameEl.value.trim(),
+            role: roleEl.value,
+            email: emailEl.value.trim(),
+            password: passwordEl.value
+        };
         
-        // Combinar todos los datos
-        const allFormData = formManager.getAllData();
+        console.log(`✅ Manager #${managerNum} recolectado:`, manager);
         
-        console.log('📋 Datos completos del formulario antes de enviar:', allFormData);
-        
-        // Verificar si estamos editando
-        const editToken = localStorage.getItem('editToken');
-        
-        // Enviar al backend
-        await submitForm(allFormData, editToken);
+        managers.push(manager);
     });
+    
+    return { managers };
 }
 
 async function submitForm(formData, editToken = null) {
@@ -275,7 +323,8 @@ async function submitForm(formData, editToken = null) {
                 'Content-Type': 'application/json'
             },
             mode: 'cors',
-            credentials: 'omit'
+            credentials: 'omit',
+            body: JSON.stringify(payload)
         });
         
         const result = await response.json();
@@ -304,78 +353,63 @@ function showSuccessModal(token, editLink, formData) {
     const modal = document.getElementById('modalConfirmacion');
     const editLinkInput = document.getElementById('editLink');
     
+    if (!modal || !editLinkInput) {
+        console.error('❌ No se encontró el modal o el input del link');
+        return;
+    }
+    
     editLinkInput.value = editLink;
     modal.classList.remove('hidden');
     
     console.log('📄 Datos disponibles para PDF:', formData);
     
     // Copiar link
-    document.getElementById('copyLink').addEventListener('click', () => {
-        editLinkInput.select();
-        document.execCommand('copy');
-        alert('Link copied to clipboard!');
-    });
+    const copyBtn = document.getElementById('copyLink');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => {
+            editLinkInput.select();
+            document.execCommand('copy');
+            alert('Link copied to clipboard!');
+        });
+    }
     
     // Descargar PDF con los datos que acabamos de enviar
-    document.getElementById('downloadPDF').addEventListener('click', () => {
-        console.log('📄 Generando PDF con datos:', formData);
-        generatePDF(formData);
-    });
+    const downloadBtn = document.getElementById('downloadPDF');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', () => {
+            console.log('📄 Generando PDF con datos:', formData);
+            if (typeof generatePDF === 'function') {
+                generatePDF(formData);
+            } else {
+                console.error('❌ La función generatePDF no existe');
+            }
+        });
+    }
     
     // Cerrar modal
-    document.getElementById('closeModal').addEventListener('click', () => {
-        modal.classList.add('hidden');
-        
-        // Limpiar datos
-        formManager.clearData();
-        localStorage.removeItem('editToken');
-        delete window.savedFormData;
-        
-        // Redirigir a página de agradecimiento
-        window.location.href = '/thank-you';
-    });
-}
-
-function showConnectionErrorModal(token) {
-    const existingModal = document.getElementById('connectionErrorModal');
-    if (existingModal) existingModal.remove();
-    
-    const modal = document.createElement('div');
-    modal.id = 'connectionErrorModal';
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-    `;
-    
-    modal.innerHTML = `
-        <div style="background: white; padding: 40px; border-radius: 12px; max-width: 500px; text-align: center;">
-            <div style="font-size: 60px; margin-bottom: 20px;">⚠️</div>
-            <h2 style="margin-bottom: 20px; color: #333;">Cannot Connect to Server</h2>
-            <p style="color: #666; margin-bottom: 30px; line-height: 1.6;">
-                Unable to load form data. This could be because:<br><br>
-                • The server is starting up (wait 30-60 seconds)<br>
-                • Network connection issue<br>
-                • CORS policy blocking the request
-            </p>
-            <button onclick="window.location.reload()" style="background: #007bff; color: white; border: none; padding: 12px 30px; border-radius: 6px; cursor: pointer; font-size: 16px;">
-                Retry Now
-            </button>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
+    const closeBtn = document.getElementById('closeModal');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            
+            // Limpiar datos
+            formManager.clearData();
+            localStorage.removeItem('editToken');
+            delete window.savedFormData;
+            
+            // Redirigir a página de agradecimiento
+            window.location.href = '/thank-you';
+        });
+    }
 }
 
 function getFormData(formId) {
     const form = document.getElementById(formId);
+    if (!form) {
+        console.error('❌ No se encontró el formulario:', formId);
+        return {};
+    }
+    
     const formData = new FormData(form);
     const data = {};
     
