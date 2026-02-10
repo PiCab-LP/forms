@@ -15,13 +15,36 @@ const app = express();
 // Helmet: Protección de headers HTTP
 app.use(helmet());
 
-// CORS: Permitir peticiones desde el frontend
+// CORS: Permitir peticiones desde el frontend (mejorado para permitir todos los subdominios de Vercel)
 app.use(cors({
-    origin: [
-        'https://forms-wysaro.vercel.app',
-        'http://localhost:5500',
-        process.env.FRONTEND_URL
-    ].filter(Boolean), // Filtrar valores undefined/null
+    origin: function(origin, callback) {
+        // Permitir requests sin origin (como Postman, curl, apps móviles)
+        if (!origin) return callback(null, true);
+        
+        // Lista de dominios permitidos exactos
+        const allowedOrigins = [
+            'https://forms-wysaro.vercel.app',
+            'http://localhost:5500',
+            'http://localhost:3000',
+            'http://127.0.0.1:5500',
+            process.env.FRONTEND_URL
+        ].filter(Boolean);
+        
+        // Permitir TODOS los subdominios de Vercel (incluyendo preview deployments)
+        if (origin.endsWith('.vercel.app') || origin.includes('.vercel.app')) {
+            console.log('✅ CORS permitido para Vercel subdomain:', origin);
+            return callback(null, true);
+        }
+        
+        // Permitir dominios de la lista
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            console.log('✅ CORS permitido para origin:', origin);
+            callback(null, true);
+        } else {
+            console.log('❌ CORS bloqueado para origin:', origin);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -29,13 +52,32 @@ app.use(cors({
 
 // Headers CORS adicionales para asegurar compatibilidad
 app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    const origin = req.headers.origin;
+    
+    // Log del origin para debugging
+    if (origin) {
+        console.log('📡 Request from origin:', origin);
+    }
+    
+    // Permitir todos los subdominios de Vercel
+    if (origin && (origin.endsWith('.vercel.app') || origin.includes('.vercel.app'))) {
+        res.header('Access-Control-Allow-Origin', origin);
+    } else if (origin === 'http://localhost:5500' || origin === 'http://localhost:3000' || origin === 'http://127.0.0.1:5500') {
+        res.header('Access-Control-Allow-Origin', origin);
+    } else if (origin === 'https://forms-wysaro.vercel.app' || origin === process.env.FRONTEND_URL) {
+        res.header('Access-Control-Allow-Origin', origin);
+    } else if (!origin) {
+        // Si no hay origin (requests desde servidor, Postman, etc), permitir
+        res.header('Access-Control-Allow-Origin', '*');
+    }
+    
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     res.header('Access-Control-Allow-Credentials', 'true');
     
     // Manejar preflight requests
     if (req.method === 'OPTIONS') {
+        console.log('✅ Preflight request handled for:', origin);
         return res.sendStatus(200);
     }
     
@@ -45,7 +87,7 @@ app.use((req, res, next) => {
 // Sanitización contra NoSQL injection
 app.use(mongoSanitize());
 
-// Rate limiting global (100 requests por 15 minutos)
+// Rate limiting global (10000 requests por 15 minutos)
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 10000,
@@ -157,7 +199,10 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
     console.log(`🟢 Servidor corriendo en http://localhost:${PORT}`);
-    console.log(`🌐 CORS habilitado para: https://forms-wysaro.vercel.app`);
+    console.log(`🌐 CORS habilitado para:`);
+    console.log(`   - https://forms-wysaro.vercel.app`);
+    console.log(`   - Todos los subdominios *.vercel.app`);
+    console.log(`   - localhost:5500, localhost:3000`);
 });
 
 // Manejo de errores no capturados
