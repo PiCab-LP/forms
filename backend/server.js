@@ -15,11 +15,16 @@ const app = express();
 // Helmet: Protección de headers HTTP
 app.use(helmet());
 
-// CORS: Permitir peticiones desde el frontend (mejorado para permitir todos los subdominios de Vercel)
+// 🔥 CORS SIMPLIFICADO (sin conflictos)
 app.use(cors({
     origin: function(origin, callback) {
-        // Permitir requests sin origin (como Postman, curl, apps móviles)
-        if (!origin) return callback(null, true);
+        console.log('📡 Request from origin:', origin || '[NO ORIGIN]');
+        
+        // Permitir requests sin origin (Postman, curl, server-to-server)
+        if (!origin) {
+            console.log('✅ CORS permitido: Sin origin');
+            return callback(null, true);
+        }
         
         // Lista de dominios permitidos exactos
         const allowedOrigins = [
@@ -30,58 +35,32 @@ app.use(cors({
             process.env.FRONTEND_URL
         ].filter(Boolean);
         
-        // Permitir TODOS los subdominios de Vercel (incluyendo preview deployments)
-        if (origin.endsWith('.vercel.app') || origin.includes('.vercel.app')) {
+        // Permitir TODOS los subdominios de Vercel (preview deployments)
+        if (origin.endsWith('.vercel.app')) {
             console.log('✅ CORS permitido para Vercel subdomain:', origin);
             return callback(null, true);
         }
         
         // Permitir dominios de la lista
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            console.log('✅ CORS permitido para origin:', origin);
-            callback(null, true);
-        } else {
-            console.log('❌ CORS bloqueado para origin:', origin);
-            callback(new Error('Not allowed by CORS'));
+        if (allowedOrigins.includes(origin)) {
+            console.log('✅ CORS permitido para origin listado:', origin);
+            return callback(null, true);
         }
+        
+        console.log('❌ CORS BLOQUEADO para origin:', origin);
+        callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 200
 }));
 
-// Headers CORS adicionales para asegurar compatibilidad
-app.use((req, res, next) => {
+// 🔥 Manejar preflight OPTIONS requests explícitamente
+app.options('*', (req, res) => {
     const origin = req.headers.origin;
-    
-    // Log del origin para debugging
-    if (origin) {
-        console.log('📡 Request from origin:', origin);
-    }
-    
-    // Permitir todos los subdominios de Vercel
-    if (origin && (origin.endsWith('.vercel.app') || origin.includes('.vercel.app'))) {
-        res.header('Access-Control-Allow-Origin', origin);
-    } else if (origin === 'http://localhost:5500' || origin === 'http://localhost:3000' || origin === 'http://127.0.0.1:5500') {
-        res.header('Access-Control-Allow-Origin', origin);
-    } else if (origin === 'https://forms-wysaro.vercel.app' || origin === process.env.FRONTEND_URL) {
-        res.header('Access-Control-Allow-Origin', origin);
-    } else if (!origin) {
-        // Si no hay origin (requests desde servidor, Postman, etc), permitir
-        res.header('Access-Control-Allow-Origin', '*');
-    }
-    
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    
-    // Manejar preflight requests
-    if (req.method === 'OPTIONS') {
-        console.log('✅ Preflight request handled for:', origin);
-        return res.sendStatus(200);
-    }
-    
-    next();
+    console.log('✅ Preflight OPTIONS request from:', origin || '[NO ORIGIN]');
+    res.sendStatus(200);
 });
 
 // Sanitización contra NoSQL injection
@@ -184,6 +163,16 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
     console.error('❌ Error no manejado:', err);
+    
+    // Manejar errores de CORS específicamente
+    if (err.message === 'Not allowed by CORS') {
+        return res.status(403).json({
+            success: false,
+            message: 'CORS policy: Origin not allowed',
+            origin: req.headers.origin
+        });
+    }
+    
     res.status(500).json({
         success: false,
         message: 'Internal server error',
@@ -203,6 +192,7 @@ app.listen(PORT, () => {
     console.log(`   - https://forms-wysaro.vercel.app`);
     console.log(`   - Todos los subdominios *.vercel.app`);
     console.log(`   - localhost:5500, localhost:3000`);
+    console.log(`   - ${process.env.FRONTEND_URL || '[FRONTEND_URL no configurada]'}`);
 });
 
 // Manejo de errores no capturados
