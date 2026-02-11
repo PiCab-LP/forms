@@ -5,6 +5,8 @@ const emailService = require('../services/email.service');
 // Guardar nuevo formulario
 exports.submitForm = async (req, res) => {
     try {
+        console.log('📝 [CONTROLLER] submitForm iniciado');
+        
         const { formData } = req.body;
         const token = generateToken();
         
@@ -41,6 +43,8 @@ exports.submitForm = async (req, res) => {
         
         await newForm.save();
         
+        console.log('✅ [CONTROLLER] Formulario guardado con token:', token);
+        
         const editLink = `${process.env.FRONTEND_URL}/?token=${token}`;
         
         // Enviar emails
@@ -65,8 +69,10 @@ exports.submitForm = async (req, res) => {
             message: 'Formulario guardado exitosamente'
         });
         
+        console.log('✅ [CONTROLLER] Respuesta enviada al cliente');
+        
     } catch (error) {
-        console.error('Error al guardar formulario:', error);
+        console.error('❌ [CONTROLLER] Error al guardar formulario:', error);
         res.status(500).json({
             success: false,
             message: 'Error al guardar el formulario',
@@ -80,26 +86,51 @@ exports.getForm = async (req, res) => {
     try {
         const { token } = req.params;
         
+        console.log('📥 [CONTROLLER] getForm iniciado');
+        console.log('  Token recibido:', token);
+        console.log('  Origin header:', req.headers.origin);
+        
         const form = await Form.findOne({ token });
         
         if (!form) {
+            console.log('❌ [CONTROLLER] Formulario NO encontrado para token:', token);
             return res.status(404).json({
                 success: false,
                 message: 'Formulario no encontrado o expirado'
             });
         }
         
-        res.json({
+        console.log('✅ [CONTROLLER] Formulario encontrado');
+        console.log('  ID:', form._id);
+        console.log('  Company:', form.formData?.page1?.companyName);
+        console.log('  Email:', form.email);
+        console.log('  Version:', form.currentVersion);
+        
+        // 🔥 Agregar headers CORS explícitos
+        res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+        res.header('Access-Control-Allow-Credentials', 'true');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        
+        const responseData = {
             success: true,
             formData: form.formData,
             currentVersion: form.currentVersion,
             editCount: form.editCount,
             createdAt: form.createdAt,
             lastEditedAt: form.lastEditedAt
-        });
+        };
+        
+        console.log('📤 [CONTROLLER] Enviando respuesta al cliente');
+        console.log('  Response size:', JSON.stringify(responseData).length, 'bytes');
+        
+        res.json(responseData);
+        
+        console.log('✅ [CONTROLLER] Respuesta enviada exitosamente');
         
     } catch (error) {
-        console.error('Error al obtener formulario:', error);
+        console.error('❌ [CONTROLLER] Error al obtener formulario:', error);
+        console.error('  Stack:', error.stack);
         res.status(500).json({
             success: false,
             message: 'Error al obtener el formulario'
@@ -110,7 +141,7 @@ exports.getForm = async (req, res) => {
 // Actualizar formulario existente
 exports.updateForm = async (req, res) => {
     try {
-        console.log('🔄 UPDATE FORM EJECUTADO');
+        console.log('🔄 [CONTROLLER] updateForm iniciado');
         console.log('📦 Token recibido:', req.body.token);
         console.log('📊 Datos recibidos:', JSON.stringify(req.body.formData, null, 2));
         
@@ -188,8 +219,10 @@ exports.updateForm = async (req, res) => {
             changesDetected: Object.keys(changes).length > 0
         });
         
+        console.log('✅ [CONTROLLER] Respuesta de update enviada');
+        
     } catch (error) {
-        console.error('❌ Error al actualizar formulario:', error);
+        console.error('❌ [CONTROLLER] Error al actualizar formulario:', error);
         res.status(500).json({
             success: false,
             message: 'Error al actualizar el formulario'
@@ -281,16 +314,21 @@ function detectChanges(oldData, newData) {
 // Obtener historial completo
 exports.getFormHistory = async (req, res) => {
     try {
+        console.log('📜 [CONTROLLER] getFormHistory iniciado');
+        
         const { token } = req.params;
         
         const form = await Form.findOne({ token });
         
         if (!form) {
+            console.log('❌ [CONTROLLER] Formulario no encontrado para history');
             return res.status(404).json({
                 success: false,
                 message: 'Formulario no encontrado'
             });
         }
+        
+        console.log('✅ [CONTROLLER] History encontrado para:', form.email);
         
         res.json({
             success: true,
@@ -313,8 +351,10 @@ exports.getFormHistory = async (req, res) => {
             }
         });
         
+        console.log('✅ [CONTROLLER] History response enviado');
+        
     } catch (error) {
-        console.error('Error al obtener historial:', error);
+        console.error('❌ [CONTROLLER] Error al obtener historial:', error);
         res.status(500).json({
             success: false,
             message: 'Error al obtener el historial'
