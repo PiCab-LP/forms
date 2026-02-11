@@ -125,6 +125,9 @@ async function loadExistingFormData(token) {
     try {
         console.log('🔄 Cargando datos del token:', token);
         console.log('📍 URL completa:', `${API_URL}/get/${token}`);
+
+        // ⏱️ DIAGNÓSTICO: Medir cuánto tarda el fetch
+        console.log('⏱️ Iniciando fetch en:', new Date().toISOString());
        
         const response = await fetch(`${API_URL}/get/${token}`, {
             method: 'GET',
@@ -172,6 +175,8 @@ async function loadExistingFormData(token) {
             alert('Form not found or expired: ' + (data.message || ''));
         }
     } catch (error) {
+        // ⏱️ DIAGNÓSTICO: Registrar cuándo falló
+        console.log('⏱️ Falló en:', new Date().toISOString());
         console.error('❌ Error completo:', error);
         console.error('❌ Error name:', error.name);
         console.error('❌ Error message:', error.message);
