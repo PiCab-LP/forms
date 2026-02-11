@@ -1,5 +1,5 @@
 // Configuración del API
-const API_URL = 'https://api.allorigins.win/raw?url=https://forms-wliu.onrender.com/api/form';
+const API_URL = 'https://forms-wliu.onrender.com/api/form';
 
 // Almacenamiento temporal de datos entre páginas
 class FormDataManager {
@@ -125,18 +125,8 @@ async function loadExistingFormData(token) {
     try {
         console.log('🔄 Cargando datos del token:', token);
         console.log('📍 URL completa:', `${API_URL}/get/${token}`);
-
-        // ⏱️ DIAGNÓSTICO: Medir cuánto tarda el fetch
-        console.log('⏱️ Iniciando fetch en:', new Date().toISOString());
        
-        const response = await fetch(`${API_URL}/get/${token}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            mode: 'cors',
-            credentials: 'omit'
-        });
+        const response = await fetch(`${API_URL}/get/${token}`);
        
         console.log('📡 Response status:', response.status);
         console.log('📡 Response ok:', response.ok);
@@ -152,39 +142,37 @@ async function loadExistingFormData(token) {
         console.log('📥 Respuesta del servidor:', data);
        
         if (data.success) {
-            // 🔥 IMPORTANTE: Limpiar localStorage antiguo PRIMERO
             console.log('🧹 Limpiando localStorage antiguo...');
             localStorage.removeItem('formData');
             formManager.clearData();
            
-            // Guardar datos FRESCOS del servidor
             localStorage.setItem('formData', JSON.stringify(data.formData));
             localStorage.setItem('editToken', token);
            
             console.log('✅ localStorage actualizado con datos del servidor');
             console.log('📊 Datos guardados:', data.formData);
            
-            // Pre-llenar campos de la página actual
+            // 🔥 ESPERAR 200ms para que el DOM esté listo
+            console.log('⏱️ Esperando 200ms para que el DOM esté completamente listo...');
+            await new Promise(resolve => setTimeout(resolve, 200));
+            
             console.log('🎨 Llenando campos del formulario...');
             fillFormFields(data.formData);
            
-            // Mostrar mensaje de edición
             showEditMode();
         } else {
             console.error('❌ Error del servidor:', data.message);
             alert('Form not found or expired: ' + (data.message || ''));
         }
     } catch (error) {
-        // ⏱️ DIAGNÓSTICO: Registrar cuándo falló
-        console.log('⏱️ Falló en:', new Date().toISOString());
         console.error('❌ Error completo:', error);
         console.error('❌ Error name:', error.name);
         console.error('❌ Error message:', error.message);
         console.error('❌ Error stack:', error.stack);
        
-        // Mensaje más específico
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-            alert('Cannot connect to server. Please check if the backend is running.');
+            console.error('🚨 TypeError - Error de red o CORS');
+            alert('Cannot connect to server. Check your internet connection or try again later.');
         } else if (error.message.includes('HTTP error')) {
             alert('Server returned an error: ' + error.message);
         } else {
@@ -211,7 +199,6 @@ function fillFormFields(data) {
     if (currentPage === 'page1') {
         console.log('🎨 Llenando campos de page1...');
         
-        // 🔥 PRIMERO: Obtener referencias a los elementos
         const companyNameEl = document.getElementById('companyName');
         const facebookEl = document.getElementById('facebook');
         const instagramEl = document.getElementById('instagram');
@@ -227,22 +214,13 @@ function fillFormFields(data) {
         
         if (!facebookEl || !instagramEl || !twitterEl || !otherEl) {
             console.error('❌ CRÍTICO: Algunos campos no existen en el DOM');
-            console.error('❌ Esto NO debería pasar si estamos dentro de DOMContentLoaded');
             return;
         }
        
-        // 🔥 SEGUNDO: Resetear todos los campos a vacío
-        facebookEl.value = '';
-        instagramEl.value = '';
-        twitterEl.value = '';
-        otherEl.value = '';
-       
-        console.log('🧹 Campos reseteados a vacío');
-       
-        // 🔥 TERCERO: Llenar con los valores del servidor
-        if (companyNameEl) {
-            companyNameEl.textContent = pageData.companyName || '';
-            console.log('  companyName llenado con:', pageData.companyName || '[VACÍO]');
+        // Llenar con los valores del servidor
+        if (companyNameEl && pageData.companyName) {
+            companyNameEl.textContent = pageData.companyName;
+            console.log('  ✅ companyName:', pageData.companyName);
         }
        
         facebookEl.value = pageData.facebook || '';
@@ -250,7 +228,6 @@ function fillFormFields(data) {
         twitterEl.value = pageData.twitter || '';
         otherEl.value = pageData.other || '';
        
-        // 🔥 DEBUG: Mostrar valores finales
         console.log('✅ Campos llenados con valores del servidor:');
         console.log('  Facebook:', facebookEl.value || '[VACÍO]');
         console.log('  Instagram:', instagramEl.value || '[VACÍO]');
@@ -260,7 +237,6 @@ function fillFormFields(data) {
     } else if (currentPage === 'page2') {
         console.log('🎨 Llenando campos de page2...');
         
-        // Llenar página 2 (managers)
         if (pageData.managers && pageData.managers.length > 0) {
             console.log('👥 Managers a cargar:', pageData.managers.length);
            
@@ -271,11 +247,8 @@ function fillFormFields(data) {
             }
             
             console.log('✅ managersContainer encontrado');
-           
-            // No limpiar el container, solo llenar el primer manager
             fillManagerFields(1, pageData.managers[0]);
            
-            // Agregar managers adicionales
             for (let i = 1; i < pageData.managers.length; i++) {
                 console.log(`➕ Agregando manager #${i + 1}`);
                 if (typeof addManagerBlock === 'function') {
@@ -316,7 +289,6 @@ function fillManagerFields(managerNum, data) {
     console.log(`✅ Manager #${managerNum} llenado correctamente`);
 }
 
-// 🔥 NUEVA FUNCIÓN: Recolectar datos de página 2
 function getFormDataPage2() {
     const managers = [];
     const managerBlocks = document.querySelectorAll('.manager-block');
@@ -372,8 +344,6 @@ async function submitForm(formData, editToken = null) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            mode: 'cors',
-            credentials: 'omit',
             body: JSON.stringify(payload)
         });
        
@@ -387,12 +357,8 @@ async function submitForm(formData, editToken = null) {
             console.log('✅ Formulario guardado exitosamente');
             console.log('🔑 Token recibido:', result.token);
            
-            // Guardar los datos en una variable global para el PDF
             window.savedFormData = formData;
-           
-            // Mostrar modal con link de edición
             showSuccessModal(result.token, result.editLink, formData);
-           
         } else {
             console.error('❌ Error del servidor:', result.message);
             alert('Error: ' + result.message);
@@ -420,7 +386,6 @@ function showSuccessModal(token, editLink, formData) {
    
     console.log('📄 Datos disponibles para PDF:', formData);
    
-    // Copiar link
     const copyBtn = document.getElementById('copyLink');
     if (copyBtn) {
         copyBtn.addEventListener('click', () => {
@@ -431,7 +396,6 @@ function showSuccessModal(token, editLink, formData) {
         });
     }
    
-    // Descargar PDF con los datos que acabamos de enviar
     const downloadBtn = document.getElementById('downloadPDF');
     if (downloadBtn) {
         downloadBtn.addEventListener('click', () => {
@@ -444,19 +408,16 @@ function showSuccessModal(token, editLink, formData) {
         });
     }
    
-    // Cerrar modal
     const closeBtn = document.getElementById('closeModal');
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
             console.log('❌ Cerrando modal y limpiando datos');
             modal.classList.add('hidden');
            
-            // Limpiar datos
             formManager.clearData();
             localStorage.removeItem('editToken');
             delete window.savedFormData;
            
-            // Redirigir a página de agradecimiento
             window.location.href = '/thank-you';
         });
     }
@@ -492,7 +453,6 @@ function showEditMode() {
         return;
     }
    
-    // Verificar si ya existe el banner
     if (document.querySelector('.edit-mode-banner')) {
         console.log('ℹ️ Banner de edición ya existe');
         return;
