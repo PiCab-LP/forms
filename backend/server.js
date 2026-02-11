@@ -60,12 +60,6 @@ app.use(cors({
     optionsSuccessStatus: 200
 }));
 
-// 🔥 Manejar preflight OPTIONS requests explícitamente
-app.options('*', (req, res) => {
-    const origin = req.headers.origin;
-    console.log('✅ Preflight OPTIONS request from:', origin || '[NO ORIGIN]');
-    res.sendStatus(200);
-});
 
 // Sanitización contra NoSQL injection
 app.use(mongoSanitize());
