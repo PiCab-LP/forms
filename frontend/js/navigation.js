@@ -134,55 +134,11 @@ window.addEventListener('DOMContentLoaded', () => {
     
     if (currentPage === 1) {
         // 🔥 Si hay token, esperar un momento para que form-handler.js cargue los datos
-        if (hasEditToken) {
-            console.log('⏭️ Modo edición detectado');
-            console.log('💡 Esperando a que form-handler.js cargue los datos del servidor...');
-            
-            // Esperar 1 segundo para que form-handler.js termine de guardar en localStorage
-            setTimeout(() => {
-                console.log('📂 Intentando cargar datos desde localStorage después de espera');
-                const savedData = formManager.loadPageData(1);
-                console.log('📊 Datos cargados desde localStorage:', savedData);
-                
-                if (Object.keys(savedData).length > 0) {
-                    console.log('✅ Datos encontrados, llenando campos...');
-                    
-                    const companyNameEl = document.getElementById('companyName');
-                    if (companyNameEl && savedData.companyName) {
-                        companyNameEl.textContent = savedData.companyName;
-                        console.log('✅ Company name cargado:', savedData.companyName);
-                    }
-                    
-                    const facebookEl = document.getElementById('facebook');
-                    if (facebookEl) {
-                        facebookEl.value = savedData.facebook || '';
-                        console.log('✅ Facebook cargado:', savedData.facebook || '[VACÍO]');
-                    }
-                    
-                    const instagramEl = document.getElementById('instagram');
-                    if (instagramEl) {
-                        instagramEl.value = savedData.instagram || '';
-                        console.log('✅ Instagram cargado:', savedData.instagram || '[VACÍO]');
-                    }
-                    
-                    const twitterEl = document.getElementById('twitter');
-                    if (twitterEl) {
-                        twitterEl.value = savedData.twitter || '';
-                        console.log('✅ Twitter cargado:', savedData.twitter || '[VACÍO]');
-                    }
-                    
-                    const otherEl = document.getElementById('other');
-                    if (otherEl) {
-                        otherEl.value = savedData.other || '';
-                        console.log('✅ Other cargado:', savedData.other || '[VACÍO]');
-                    }
-                } else {
-                    console.warn('⚠️ No se encontraron datos en localStorage aún');
-                }
-            }, 1000);
-            
-            return; // Salir después de configurar el setTimeout
-        }
+if (hasEditToken) {
+    console.log('⏭️ Modo edición detectado');
+    console.log('✅ form-handler.js se encarga de cargar y llenar los datos del servidor');
+    return;
+}
         
         console.log('📂 Cargando datos desde localStorage (nuevo formulario)');
         
