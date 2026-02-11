@@ -1,5 +1,5 @@
 // Configuración del API
-const API_URL = 'https://forms-wliu.onrender.com/api/form';
+const API_URL = 'https://api.allorigins.win/raw?url=https://forms-wliu.onrender.com/api/form';
 
 // Almacenamiento temporal de datos entre páginas
 class FormDataManager {
