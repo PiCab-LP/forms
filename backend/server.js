@@ -12,8 +12,12 @@ const app = express();
 // SEGURIDAD
 // ===========================
 
-// Helmet: Protección de headers HTTP
-app.use(helmet());
+// 🔥 Helmet con CSP deshabilitado para permitir fetch cross-origin
+app.use(helmet({
+    contentSecurityPolicy: false, // ← Deshabilitar CSP que bloquea fetch
+    crossOriginResourcePolicy: false,
+    crossOriginEmbedderPolicy: false
+}));
 
 // 🔥 CORS SIMPLIFICADO (sin conflictos)
 app.use(cors({
@@ -193,6 +197,7 @@ app.listen(PORT, () => {
     console.log(`   - Todos los subdominios *.vercel.app`);
     console.log(`   - localhost:5500, localhost:3000`);
     console.log(`   - ${process.env.FRONTEND_URL || '[FRONTEND_URL no configurada]'}`);
+    console.log(`🛡️  Helmet CSP: DESHABILITADO (para permitir fetch cross-origin)`);
 });
 
 // Manejo de errores no capturados
