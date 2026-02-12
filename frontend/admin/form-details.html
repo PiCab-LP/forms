@@ -282,7 +282,15 @@
         // Cargar detalles del formulario
         async function loadFormDetails() {
             try {
-                const response = await fetch(`${API_URL}/forms/${currentToken}`);
+                // 🔐 Obtener JWT del localStorage
+                const jwtToken = localStorage.getItem('adminToken');
+                
+                const response = await fetch(`${API_URL}/forms/${currentToken}`, {
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
+                });
+                
                 const data = await response.json();
 
                 if (data.success) {
@@ -435,8 +443,14 @@
             }
 
             try {
+                // 🔐 Obtener JWT del localStorage
+                const jwtToken = localStorage.getItem('adminToken');
+                
                 const response = await fetch(`${API_URL}/forms/${currentToken}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${jwtToken}`
+                    }
                 });
 
                 const data = await response.json();
