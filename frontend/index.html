@@ -61,10 +61,21 @@
 <script>
     // Cargar nombre del gameroom al cargar la página
     window.addEventListener('DOMContentLoaded', () => {
+        // 🔥 Si hay token en URL, NO verificar localStorage (modo edición)
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasToken = urlParams.get('token');
+        
+        if (hasToken) {
+            console.log('✅ Token detectado, omitiendo verificación de gameroomName');
+            // En modo edición, el nombre se cargará desde el servidor
+            return;
+        }
+        
         const gameroomName = localStorage.getItem('gameroomName');
         
-        // Si no hay nombre, redirigir a welcome
+        // Si no hay nombre y NO hay token, redirigir a welcome
         if (!gameroomName) {
+            console.log('⚠️ No hay gameroomName, redirigiendo a welcome');
             window.location.href = 'welcome.html';
             return;
         }
