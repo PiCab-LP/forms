@@ -137,7 +137,7 @@ window.addEventListener('DOMContentLoaded', () => {
 if (hasEditToken) {
     console.log('⏭️ Modo edición detectado');
     console.log('✅ form-handler.js se encarga de cargar y llenar los datos del servidor');
-    return;
+    // return;
 }
         
         console.log('📂 Cargando datos desde localStorage (nuevo formulario)');
