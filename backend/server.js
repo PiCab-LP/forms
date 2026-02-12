@@ -6,11 +6,14 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
 
+
 const app = express();
+
 
 // ===========================
 // SEGURIDAD
 // ===========================
+
 
 // 🔥 Helmet con CSP deshabilitado para permitir fetch cross-origin
 app.use(helmet({
@@ -18,6 +21,7 @@ app.use(helmet({
     crossOriginResourcePolicy: false,
     crossOriginEmbedderPolicy: false
 }));
+
 
 // 🔥 CORS SIMPLIFICADO (sin conflictos)
 app.use(cors({
@@ -61,8 +65,10 @@ app.use(cors({
 }));
 
 
+
 // Sanitización contra NoSQL injection
 app.use(mongoSanitize());
+
 
 // Rate limiting global (10000 requests por 15 minutos)
 const globalLimiter = rateLimit({
@@ -76,7 +82,9 @@ const globalLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+
 app.use('/api', globalLimiter);
+
 
 // Rate limiting específico para formularios (TEMPORALMENTE DESHABILITADO)
 const formSubmitLimiter = rateLimit({
@@ -89,6 +97,7 @@ const formSubmitLimiter = rateLimit({
     skipSuccessfulRequests: false,
 });
 
+
 // Rate limiting para admin (más flexible)
 const adminLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
@@ -99,35 +108,45 @@ const adminLimiter = rateLimit({
     }
 });
 
+
 // ===========================
 // MIDDLEWARES
 // ===========================
 
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+
 // Trust proxy (importante para obtener la IP real si usas un proxy/load balancer)
 app.set('trust proxy', 1);
+
 
 // ===========================
 // MONGODB CONNECTION
 // ===========================
 
+
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('✅ MongoDB conectado exitosamente'))
     .catch(err => console.error('❌ Error conectando a MongoDB:', err));
+
 
 // ===========================
 // RUTAS
 // ===========================
 
+
 const formRoutes = require('./routes/form.routes');
 const adminRoutes = require('./routes/admin.routes');
+const authRoutes = require('./routes/auth.routes'); // ← NUEVA LÍNEA
+
 
 // Ruta de prueba (sin rate limiting)
 app.get('/', (req, res) => {
     res.json({ message: '🚀 Servidor funcionando correctamente' });
 });
+
 
 // Health check (sin rate limiting)
 app.get('/health', (req, res) => {
@@ -138,14 +157,21 @@ app.get('/health', (req, res) => {
     });
 });
 
+
+// Aplicar rutas de autenticación (sin rate limiter agresivo para login)
+app.use('/api/auth', authRoutes); // ← NUEVA LÍNEA
+
 // Aplicar rate limiter específico a formularios
 app.use('/api/form', formSubmitLimiter, formRoutes);
+
 
 // Aplicar rate limiter específico a admin
 app.use('/api/admin', adminLimiter, adminRoutes);
 
+
 // Servir archivos estáticos del frontend
 app.use(express.static('../frontend'));
+
 
 // Ruta 404
 app.use((req, res) => {
@@ -155,9 +181,11 @@ app.use((req, res) => {
     });
 });
 
+
 // ===========================
 // ERROR HANDLER GLOBAL
 // ===========================
+
 
 app.use((err, req, res, next) => {
     console.error('❌ Error no manejado:', err);
@@ -178,11 +206,14 @@ app.use((err, req, res, next) => {
     });
 });
 
+
 // ===========================
 // INICIAR SERVIDOR
 // ===========================
 
+
 const PORT = process.env.PORT || 3000;
+
 
 app.listen(PORT, () => {
     console.log(`🟢 Servidor corriendo en http://localhost:${PORT}`);
@@ -194,10 +225,12 @@ app.listen(PORT, () => {
     console.log(`🛡️  Helmet CSP: DESHABILITADO (para permitir fetch cross-origin)`);
 });
 
+
 // Manejo de errores no capturados
 process.on('unhandledRejection', (err) => {
     console.error('❌ Unhandled Rejection:', err);
 });
+
 
 process.on('uncaughtException', (err) => {
     console.error('❌ Uncaught Exception:', err);

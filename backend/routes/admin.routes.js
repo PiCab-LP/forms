@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const adminController = require('../controllers/admin.controller');
+const { protect } = require('../middleware/auth.middleware'); // ← NUEVA LÍNEA
+
+// 🔐 Proteger TODAS las rutas del admin
+router.use(protect); // ← NUEVA LÍNEA
 
 // Obtener todos los formularios (con búsqueda y paginación)
 router.get('/forms', adminController.getAllForms);
