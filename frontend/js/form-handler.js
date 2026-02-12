@@ -126,7 +126,16 @@ async function loadExistingFormData(token) {
         console.log('🔄 Cargando datos del token:', token);
         console.log('📍 URL completa:', `${API_URL}/get/${token}`);
        
-        const response = await fetch(`${API_URL}/get/${token}`);
+        const response = await fetch(`${API_URL}/get/${token}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'User-Agent': 'WysaroFormsApp/1.0', // ← Evita bloqueo de Cloudflare
+            },
+            mode: 'cors', // ← Explícito
+            credentials: 'include' // ← Si usas cookies/auth
+        });
        
         console.log('📡 Response status:', response.status);
         console.log('📡 Response ok:', response.ok);
