@@ -1,12 +1,61 @@
 const API_URL = 'https://forms-wliu.onrender.com/api/admin';
 
-
 let currentPage = 1;
 let searchTimeout;
 
+// 🔐 Verificar autenticación al cargar
+async function checkAuth() {
+    const token = localStorage.getItem('adminToken');
+    
+    if (!token) {
+        console.log('❌ No token, redirecting to login');
+        window.location.href = '/login.html';
+        return false;
+    }
+    
+    try {
+        const response = await fetchWithAuth(`${API_URL.replace('/admin', '/auth')}/verify`);
+        
+        if (!response.ok) {
+            console.log('❌ Invalid token, redirecting to login');
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminUser');
+            window.location.href = '/login.html';
+            return false;
+        }
+        
+        console.log('✅ Authentication valid');
+        return true;
+    } catch (error) {
+        console.error('❌ Auth check error:', error);
+        window.location.href = '/login.html';
+        return false;
+    }
+}
+
+// 🔐 Fetch con autenticación
+async function fetchWithAuth(url, options = {}) {
+    const token = localStorage.getItem('adminToken');
+    
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+        'Authorization': `Bearer ${token}`
+    };
+    
+    return fetch(url, { ...options, headers });
+}
 
 // Cargar datos al iniciar
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+    // 🔐 Verificar autenticación primero
+    const isAuth = await checkAuth();
+    
+    if (!isAuth) {
+        return; // Si no está autenticado, se redirige automáticamente
+    }
+    
+    // Cargar datos del dashboard
     loadStats();
     loadForms(1);
     
@@ -19,11 +68,10 @@ window.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-
 // Cargar estadísticas
 async function loadStats() {
     try {
-        const response = await fetch(`${API_URL}/stats`);
+        const response = await fetchWithAuth(`${API_URL}/stats`);
         const data = await response.json();
         
         if (data.success) {
@@ -37,11 +85,10 @@ async function loadStats() {
     }
 }
 
-
 // Cargar formularios
 async function loadForms(page = 1, search = '') {
     try {
-        const response = await fetch(`${API_URL}/forms?page=${page}&limit=10&search=${search}`);
+        const response = await fetchWithAuth(`${API_URL}/forms?page=${page}&limit=10&search=${search}`);
         const data = await response.json();
         
         if (data.success) {
@@ -56,7 +103,6 @@ async function loadForms(page = 1, search = '') {
         `;
     }
 }
-
 
 // Renderizar tabla de formularios
 function renderFormsTable(forms) {
@@ -90,7 +136,6 @@ function renderFormsTable(forms) {
     `).join('');
 }
 
-
 // Renderizar paginación
 function renderPagination(pagination) {
     const paginationDiv = document.getElementById('pagination');
@@ -115,13 +160,10 @@ function renderPagination(pagination) {
     paginationDiv.innerHTML = html;
 }
 
-
 // Ver detalles de un formulario
 function viewForm(token) {
-    // ✅ CORREGIDO: agregar /admin/ en la ruta
     window.location.href = `/admin/form-details?token=${token}`;
 }
-
 
 // Eliminar formulario
 async function deleteForm(token) {
@@ -130,7 +172,7 @@ async function deleteForm(token) {
     }
     
     try {
-        const response = await fetch(`${API_URL}/forms/${token}`, {
+        const response = await fetchWithAuth(`${API_URL}/forms/${token}`, {
             method: 'DELETE'
         });
         
@@ -149,16 +191,22 @@ async function deleteForm(token) {
     }
 }
 
-
 // Exportar a CSV
 function exportCSV() {
-    window.open(`${API_URL}/export/csv`, '_blank');
+    const token = localStorage.getItem('adminToken');
+    window.open(`${API_URL}/export/csv?token=${token}`, '_blank');
 }
-
 
 // Refrescar datos
 function refreshData() {
     const searchValue = document.getElementById('searchInput').value;
     loadStats();
     loadForms(currentPage, searchValue);
+}
+
+// 🔐 Logout (opcional, agregar botón en el HTML)
+function logout() {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
+    window.location.href = '/login.html';
 }

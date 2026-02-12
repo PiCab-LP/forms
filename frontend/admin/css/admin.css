@@ -363,3 +363,14 @@ body {
         margin-left: 0;
     }
 }
+
+.logout-btn {
+    margin-top: auto;
+    color: #e74c3c !important;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 20px !important;
+}
+
+.logout-btn:hover {
+    background: rgba(231, 76, 60, 0.1) !important;
+}
