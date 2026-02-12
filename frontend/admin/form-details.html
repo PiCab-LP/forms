@@ -246,19 +246,38 @@
         let currentToken = '';
         let formData = null;
 
+        // 🔐 Verificar JWT antes de cargar
+        function checkAuth() {
+            const jwtToken = localStorage.getItem('adminToken');
+            
+            if (!jwtToken) {
+                console.log('❌ No JWT token found');
+                window.location.href = '/login.html';
+                return false;
+            }
+            
+            return true;
+        }
+
         // Obtener token de URL
         const urlParams = new URLSearchParams(window.location.search);
         currentToken = urlParams.get('token');
 
         // Cargar detalles al iniciar
         window.addEventListener('DOMContentLoaded', () => {
+            // 🔐 Verificar autenticación primero
+            if (!checkAuth()) {
+                return;
+            }
+            
             if (!currentToken) {
                 alert('No token provided');
-                window.location.href = '/index';
+                window.location.href = '/admin';
                 return;
             }
             loadFormDetails();
         });
+
 
         // Cargar detalles del formulario
         async function loadFormDetails() {
