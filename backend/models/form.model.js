@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 // Schema para cada versión del formulario
+// (Este lo dejamos igual, guarda el historial tal cual llega)
 const formVersionSchema = new mongoose.Schema({
     versionNumber: {
         type: Number,
@@ -33,10 +34,41 @@ const formSchema = new mongoose.Schema({
         type: Number,
         default: 1
     },
+    
+    // 🔥 AQUÍ ESTÁ EL CAMBIO IMPORTANTE
+    // Antes era "type: Object", ahora definimos la estructura de Page 1
     formData: {
-        type: Object,
-        required: true
+        page1: {
+            // Campos de redes sociales (según tu form actual)
+            companyName: { type: String, default: '' },
+            facebook: { type: String, default: '' },
+            instagram: { type: String, default: '' },
+            twitter: { type: String, default: '' },
+            other: { type: String, default: '' },
+
+            // 👇 NUEVA SECCIÓN: LOGOS
+            logoOption: { 
+                type: String, 
+                enum: ['has-logo', 'needs-logo', 'none'], // Solo permite estos 3 valores
+                default: 'none' 
+            },
+            // Array para guardar las URLs de Cloudinary (Opción 1: Ya tengo logo)
+            uploadedLogos: { type: [String], default: [] },
+            
+            // Texto descriptivo (Opción 2: Necesito diseño)
+            designReferenceText: { type: String, default: '' },
+            
+            // Array para guardar URLs de referencias (Opción 2: Necesito diseño)
+            designReferenceImages: { type: [String], default: [] }
+        },
+        
+        // Mantenemos Page 2 flexible (Object) para no romper tu lógica de managers actual
+        page2: { 
+            type: Object, 
+            default: {} 
+        }
     },
+
     email: {
         type: String,
         required: true
@@ -65,7 +97,7 @@ const formSchema = new mongoose.Schema({
     }
 });
 
-// Método para comparar cambios entre versiones
+// Método para comparar cambios entre versiones (Sin cambios, sigue funcionando igual)
 formSchema.methods.detectChanges = function(newData) {
     const changes = {};
     const oldData = this.formData;
@@ -73,7 +105,9 @@ formSchema.methods.detectChanges = function(newData) {
     ['page1', 'page2'].forEach(page => {
         if (newData[page] && oldData[page]) {
             Object.keys(newData[page]).forEach(key => {
-                if (newData[page][key] !== oldData[page][key]) {
+                // Comparamos valores. Nota: Al usar esquemas, oldData[page] es un documento Mongoose,
+                // pero acceder a properties por [key] sigue funcionando.
+                if (JSON.stringify(newData[page][key]) !== JSON.stringify(oldData[page][key])) {
                     if (!changes[page]) changes[page] = {};
                     changes[page][key] = {
                         old: oldData[page][key],
