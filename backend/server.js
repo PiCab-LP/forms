@@ -6,14 +6,17 @@ const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const rateLimit = require('express-rate-limit');
 
-
 const app = express();
 
+// ===========================
+// CONFIGURACIÓN DE PROXY (IMPORTANTE PARA RENDER)
+// ===========================
+// 🔥 Esto debe ir PRIMERO para que obtenga la IP real antes de cualquier chequeo
+app.set('trust proxy', 1);
 
 // ===========================
 // SEGURIDAD
 // ===========================
-
 
 // 🔥 Helmet con CSP deshabilitado para permitir fetch cross-origin
 app.use(helmet({
@@ -22,9 +25,12 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 
+// ===========================
+// CONFIGURACIÓN DE CORS (SOLUCIÓN IPHONE)
+// ===========================
 
-// 🔥 CORS SIMPLIFICADO (sin conflictos)
-app.use(cors({
+// Definimos las opciones en una variable para usarlas en app.use Y en app.options
+const corsOptions = {
     origin: function(origin, callback) {
         console.log('📡 Request from origin:', origin || '[NO ORIGIN]');
         
@@ -60,35 +66,29 @@ app.use(cors({
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    optionsSuccessStatus: 200
-}));
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    optionsSuccessStatus: 204 // ← CAMBIO: 204 es mejor para Safari/iOS que 200
+};
+
+// 1. Aplicar CORS general
+app.use(cors(corsOptions));
+
+// 2. 🔥 LA CORRECCIÓN: Habilitar Preflight (OPTIONS) usando la misma configuración
+// Esto reemplaza tu bloque manual anterior y evita el error "Double Header" en iPhone
+app.options('*', cors(corsOptions));
+
 
 // ===========================
-// PREFLIGHT HANDLER (PARA SAFARI/iOS)
+// MIDDLEWARES DE SANITIZACIÓN
 // ===========================
-
-// Manejar OPTIONS explícitamente ANTES de las rutas
-app.options('*', (req, res) => {
-    console.log('🔧 [OPTIONS] Preflight request');
-    console.log('  Origin:', req.headers.origin);
-    console.log('  Method:', req.headers['access-control-request-method']);
-    console.log('  Headers:', req.headers['access-control-request-headers']);
-    
-    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Max-Age', '86400'); // Cache por 24 horas
-    
-    console.log('✅ [OPTIONS] Preflight respondido correctamente');
-    
-    res.sendStatus(200);
-});
 
 // Sanitización contra NoSQL injection
 app.use(mongoSanitize());
 
+
+// ===========================
+// RATE LIMITING
+// ===========================
 
 // Rate limiting global (10000 requests por 15 minutos)
 const globalLimiter = rateLimit({
@@ -102,11 +102,10 @@ const globalLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-
 app.use('/api', globalLimiter);
 
 
-// Rate limiting específico para formularios (TEMPORALMENTE DESHABILITADO)
+// Rate limiting específico para formularios (TEMPORALMENTE DESHABILITADO/ALTO)
 const formSubmitLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hora
     max: 999999, // ← Sin límite temporal para testing
@@ -130,22 +129,16 @@ const adminLimiter = rateLimit({
 
 
 // ===========================
-// MIDDLEWARES
+// BODY PARSERS
 // ===========================
-
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 
-// Trust proxy (importante para obtener la IP real si usas un proxy/load balancer)
-app.set('trust proxy', 1);
-
-
 // ===========================
 // MONGODB CONNECTION
 // ===========================
-
 
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('✅ MongoDB conectado exitosamente'))
@@ -156,10 +149,9 @@ mongoose.connect(process.env.MONGODB_URI)
 // RUTAS
 // ===========================
 
-
 const formRoutes = require('./routes/form.routes');
 const adminRoutes = require('./routes/admin.routes');
-const authRoutes = require('./routes/auth.routes'); // ← NUEVA LÍNEA
+const authRoutes = require('./routes/auth.routes'); 
 
 
 // Ruta de prueba (sin rate limiting)
@@ -179,7 +171,7 @@ app.get('/health', (req, res) => {
 
 
 // Aplicar rutas de autenticación (sin rate limiter agresivo para login)
-app.use('/api/auth', authRoutes); // ← NUEVA LÍNEA
+app.use('/api/auth', authRoutes); 
 
 // Aplicar rate limiter específico a formularios
 app.use('/api/form', formSubmitLimiter, formRoutes);
@@ -189,7 +181,7 @@ app.use('/api/form', formSubmitLimiter, formRoutes);
 app.use('/api/admin', adminLimiter, adminRoutes);
 
 
-// Servir archivos estáticos del frontend
+// Servir archivos estáticos del frontend (si aplica)
 app.use(express.static('../frontend'));
 
 
@@ -205,7 +197,6 @@ app.use((req, res) => {
 // ===========================
 // ERROR HANDLER GLOBAL
 // ===========================
-
 
 app.use((err, req, res, next) => {
     console.error('❌ Error no manejado:', err);
@@ -231,9 +222,7 @@ app.use((err, req, res, next) => {
 // INICIAR SERVIDOR
 // ===========================
 
-
 const PORT = process.env.PORT || 3000;
-
 
 app.listen(PORT, () => {
     console.log(`🟢 Servidor corriendo en http://localhost:${PORT}`);
@@ -250,7 +239,6 @@ app.listen(PORT, () => {
 process.on('unhandledRejection', (err) => {
     console.error('❌ Unhandled Rejection:', err);
 });
-
 
 process.on('uncaughtException', (err) => {
     console.error('❌ Uncaught Exception:', err);
