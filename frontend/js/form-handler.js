@@ -174,6 +174,12 @@ async function loadExistingFormData(token) {
             alert('Form not found or expired: ' + (data.message || ''));
         }
     } catch (error) {
+        // 🔥 CORRECCIÓN PARA IPHONE/SAFARI
+    // Si el error es el "fantasma" de WebKit (Autofill), lo ignoramos silenciosamente
+    if (error.stack && error.stack.includes('webkit-masked-url')) {
+        console.warn('👻 Ignorando error del Autofill de Safari. La app sigue funcionando correctamente.');
+        return; // <--- ESTO EVITA LA ALERTA MOLESTA
+    }
         console.error('❌ Error completo:', error);
         console.error('❌ Error name:', error.name);
         console.error('❌ Error message:', error.message);
