@@ -64,7 +64,27 @@ app.use(cors({
     optionsSuccessStatus: 200
 }));
 
+// ===========================
+// PREFLIGHT HANDLER (PARA SAFARI/iOS)
+// ===========================
 
+// Manejar OPTIONS explícitamente ANTES de las rutas
+app.options('*', (req, res) => {
+    console.log('🔧 [OPTIONS] Preflight request');
+    console.log('  Origin:', req.headers.origin);
+    console.log('  Method:', req.headers['access-control-request-method']);
+    console.log('  Headers:', req.headers['access-control-request-headers']);
+    
+    res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Max-Age', '86400'); // Cache por 24 horas
+    
+    console.log('✅ [OPTIONS] Preflight respondido correctamente');
+    
+    res.sendStatus(200);
+});
 
 // Sanitización contra NoSQL injection
 app.use(mongoSanitize());
