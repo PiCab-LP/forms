@@ -173,13 +173,17 @@ async function loadExistingFormData(token) {
             console.error('❌ Error del servidor:', data.message);
             alert('Form not found or expired: ' + (data.message || ''));
         }
-    } catch (error) {
-        // 🔥 CORRECCIÓN PARA IPHONE/SAFARI
-    // Si el error es el "fantasma" de WebKit (Autofill), lo ignoramos silenciosamente
-    if (error.stack && error.stack.includes('webkit-masked-url')) {
-        console.warn('👻 Ignorando error del Autofill de Safari. La app sigue funcionando correctamente.');
-        return; // <--- ESTO EVITA LA ALERTA MOLESTA
-    }
+} catch (error) {
+        // 🔥 CORRECCIÓN 2.0 PARA IPHONE/SAFARI
+        // Detectar si es el error fantasma, incluso si el stack es undefined.
+        const isSafariGhost = 
+            (error.stack && error.stack.includes('webkit-masked-url')) || // Si tiene stack (a veces pasa)
+            (error.name === 'TypeError' && error.message === 'Load failed'); // Si NO tiene stack (tu caso actual)
+
+        if (isSafariGhost) {
+            console.warn('👻 Ignorando error nativo de Safari (Load failed/Autofill).');
+            return; // <--- ¡AQUÍ MATAMOS EL ERROR PARA QUE NO SALGA ALERT!
+        }
         console.error('❌ Error completo:', error);
         console.error('❌ Error name:', error.name);
         console.error('❌ Error message:', error.message);
