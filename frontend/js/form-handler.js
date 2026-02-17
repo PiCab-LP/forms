@@ -55,18 +55,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.log('✅ Carga de datos completada');
         } else {
             console.log('⏭️ Token detectado en page2, usando datos del localStorage');
-           
+            
             // Guardar el token para el submit
             localStorage.setItem('editToken', editToken);
-           
+            
             // Llenar campos de page2 con los datos del localStorage
             const savedData = formManager.getAllData();
             console.log('📊 Datos del localStorage para page2:', savedData);
-           
+            
             if (savedData.page2) {
                 fillFormFields(savedData);
             }
-           
+            
             // Mostrar mensaje de edición
             showEditMode();
         }
@@ -81,38 +81,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         formPage2.addEventListener('submit', async (e) => {
             e.preventDefault();
-           
+            
             console.log('📝 Submit de page2 iniciado');
-           
+            
             // Validar managers
             if (typeof validateManagers === 'function' && !validateManagers()) {
                 console.log('❌ Validación de managers falló');
                 return;
             }
-           
+            
             console.log('✅ Validación de managers pasó');
-           
+            
             // Recolectar datos de página 2
             console.log('📊 Recolectando datos de page2...');
             const page2Data = getFormDataPage2();
             console.log('📦 Datos de page2 recolectados:', page2Data);
-           
+            
             formManager.savePageData(2, page2Data);
-           
+            
             // Combinar todos los datos
             const allFormData = formManager.getAllData();
-           
+            
             console.log('📋 Datos completos del formulario antes de enviar:', allFormData);
             console.log('🔍 Verificando estructura:');
             console.log('  - page1 existe:', !!allFormData.page1);
             console.log('  - page2 existe:', !!allFormData.page2);
             console.log('  - page1 tiene datos:', allFormData.page1 ? Object.keys(allFormData.page1).length : 0);
             console.log('  - page2 tiene datos:', allFormData.page2 ? Object.keys(allFormData.page2).length : 0);
-           
+            
             // Verificar si estamos editando
             const editToken = localStorage.getItem('editToken');
             console.log('🔑 Edit token:', editToken || '[NO HAY TOKEN]');
-           
+            
             // Enviar al backend
             await submitForm(allFormData, editToken);
         });
@@ -126,15 +126,16 @@ async function loadExistingFormData(token) {
         console.log('🔄 Cargando datos del token:', token);
         console.log('📍 URL completa:', `${API_URL}/get/${token}`);
        
+        // 👇 AQUÍ ESTÁ EL ARREGLO (Mantuve tus logs, pero limpié headers)
         const response = await fetch(`${API_URL}/get/${token}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'User-Agent': 'WysaroFormsApp/1.0', // ← Evita bloqueo de Cloudflare
+                'Accept': 'application/json'
+                // ❌ 'User-Agent': ELIMINADO (Esto causaba el error en iPhone)
             },
-            mode: 'cors', // ← Explícito
-            credentials: 'include' // ← Si usas cookies/auth
+            mode: 'cors'
+            // ❌ credentials: ELIMINADO (Esto causaba bloqueos de seguridad)
         });
        
         console.log('📡 Response status:', response.status);
@@ -173,17 +174,18 @@ async function loadExistingFormData(token) {
             console.error('❌ Error del servidor:', data.message);
             alert('Form not found or expired: ' + (data.message || ''));
         }
-} catch (error) {
-        // 🔥 CORRECCIÓN 2.0 PARA IPHONE/SAFARI
-        // Detectar si es el error fantasma, incluso si el stack es undefined.
+    } catch (error) {
+        // Mantenemos tu detector de errores, pero ahora el fetch debería funcionar
         const isSafariGhost = 
-            (error.stack && error.stack.includes('webkit-masked-url')) || // Si tiene stack (a veces pasa)
-            (error.name === 'TypeError' && error.message === 'Load failed'); // Si NO tiene stack (tu caso actual)
+            (error.stack && error.stack.includes('webkit-masked-url')) || 
+            (error.name === 'TypeError' && error.message === 'Load failed') ||
+            !error;
 
         if (isSafariGhost) {
             console.warn('👻 Ignorando error nativo de Safari (Load failed/Autofill).');
-            return; // <--- ¡AQUÍ MATAMOS EL ERROR PARA QUE NO SALGA ALERT!
+            return; 
         }
+
         console.error('❌ Error completo:', error);
         console.error('❌ Error name:', error.name);
         console.error('❌ Error message:', error.message);
@@ -258,7 +260,7 @@ function fillFormFields(data) {
         
         if (pageData.managers && pageData.managers.length > 0) {
             console.log('👥 Managers a cargar:', pageData.managers.length);
-           
+            
             const container = document.getElementById('managersContainer');
             if (!container) {
                 console.error('❌ No se encontró managersContainer');
@@ -316,18 +318,18 @@ function getFormDataPage2() {
    
     managerBlocks.forEach((block, index) => {
         const managerNum = index + 1;
-       
+        
         const usernameEl = document.getElementById(`username_${managerNum}`);
         const fullnameEl = document.getElementById(`fullname_${managerNum}`);
         const roleEl = document.getElementById(`role_${managerNum}`);
         const emailEl = document.getElementById(`email_${managerNum}`);
         const passwordEl = document.getElementById(`password_${managerNum}`);
-       
+        
         if (!usernameEl || !fullnameEl || !roleEl || !emailEl || !passwordEl) {
             console.error(`❌ No se encontraron todos los campos para manager #${managerNum}`);
             return;
         }
-       
+        
         const manager = {
             username: usernameEl.value.trim(),
             fullname: fullnameEl.value.trim(),
@@ -335,9 +337,9 @@ function getFormDataPage2() {
             email: emailEl.value.trim(),
             password: passwordEl.value
         };
-       
+        
         console.log(`✅ Manager #${managerNum} recolectado:`, manager);
-       
+        
         managers.push(manager);
     });
    
@@ -347,17 +349,17 @@ function getFormDataPage2() {
 async function submitForm(formData, editToken = null) {
     try {
         const endpoint = editToken ? '/update' : '/submit';
-       
+        
         const payload = {
             formData: formData,
             token: editToken
         };
-       
+        
         console.log('🚀 ENVIANDO AL SERVIDOR:');
         console.log('  Endpoint:', `${API_URL}${endpoint}`);
         console.log('  Método:', editToken ? 'UPDATE' : 'SUBMIT');
         console.log('  Payload:', JSON.stringify(payload, null, 2));
-       
+        
         const response = await fetch(`${API_URL}${endpoint}`, {
             method: 'POST',
             headers: {
@@ -365,7 +367,7 @@ async function submitForm(formData, editToken = null) {
             },
             body: JSON.stringify(payload)
         });
-       
+        
         console.log('📡 Response status:', response.status);
         
         const result = await response.json();
@@ -375,7 +377,7 @@ async function submitForm(formData, editToken = null) {
         if (result.success) {
             console.log('✅ Formulario guardado exitosamente');
             console.log('🔑 Token recibido:', result.token);
-           
+            
             window.savedFormData = formData;
             showSuccessModal(result.token, result.editLink, formData);
         } else {
@@ -432,11 +434,11 @@ function showSuccessModal(token, editLink, formData) {
         closeBtn.addEventListener('click', () => {
             console.log('❌ Cerrando modal y limpiando datos');
             modal.classList.add('hidden');
-           
+            
             formManager.clearData();
             localStorage.removeItem('editToken');
             delete window.savedFormData;
-           
+            
             window.location.href = '/thank-you';
         });
     }
