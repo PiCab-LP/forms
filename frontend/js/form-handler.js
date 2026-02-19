@@ -1,7 +1,6 @@
 // Configuración del API
 const API_URL = 'https://forms-wliu.onrender.com/api/form';
 
-// Almacenamiento temporal de datos entre páginas
 class FormDataManager {
     constructor() {
         this.storageKey = 'formData';
@@ -20,12 +19,13 @@ class FormDataManager {
     }
    
     clearData() {
+        // Limpiamos todo el rastro de la sesión actual
         localStorage.removeItem(this.storageKey);
-    }
-   
-    loadPageData(page) {
-        const allData = this.getAllData();
-        return allData[`page${page}`] || {};
+        localStorage.removeItem('editToken');
+        localStorage.removeItem('gameroomName');
+        localStorage.removeItem('logoOption');
+        localStorage.removeItem('designReferenceText');
+        console.log("🧹 LocalStorage limpiado.");
     }
 }
 
@@ -37,20 +37,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const editToken = urlParams.get('token');
     
+    // Identificar página actual para lógica de carga
+    const isWelcome = !window.location.pathname.includes('page2') && !window.location.pathname.includes('index');
+    const isPage2 = window.location.pathname.includes('page2');
+
     if (editToken) {
-        const isPage2 = window.location.pathname.includes('page2');
-        if (!isPage2) {
+        // 🛡️ REGLA DE ORO: Si hay token en URL, priorizamos los datos del servidor
+        // Solo limpiamos si es la primera vez que entramos con este token (evita limpiar al navegar a page2)
+        if (isWelcome && localStorage.getItem('editToken') !== editToken) {
+            formManager.clearData();
+        }
+        
+        localStorage.setItem('editToken', editToken);
+        
+        if (isWelcome) {
             await loadExistingFormData(editToken);
         } else {
-            localStorage.setItem('editToken', editToken);
-            const savedData = formManager.getAllData();
-            if (savedData.page2) {
-                fillFormFields(savedData);
-            }
             showEditMode();
+            const savedData = formManager.getAllData();
+            if (Object.keys(savedData).length > 0) fillFormFields(savedData);
         }
     }
 
+    // Manejador para el formulario de la Página 2 (Managers)
     const formPage2 = document.getElementById('formPage2');
     if (formPage2) {
         formPage2.addEventListener('submit', async (e) => {
@@ -58,128 +67,151 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (typeof validateManagers === 'function' && !validateManagers()) return;
             
+            // 1. Capturar datos de managers
             const page2Data = getFormDataPage2();
             formManager.savePageData(2, page2Data);
             
+            // 2. Construir objeto final unificado
             const allFormData = formManager.getAllData();
-            const editToken = localStorage.getItem('editToken');
             
-            // 🔥 CAMBIO CLAVE: Enviamos todo
-            await submitForm(allFormData, editToken);
+            // 3. Inyectar datos persistentes de la Página 1 (Welcome) recuperados de localStorage
+            if (!allFormData.page1) allFormData.page1 = {};
+            allFormData.page1.companyName = localStorage.getItem('gameroomName');
+            allFormData.page1.logoOption = localStorage.getItem('logoOption');
+            allFormData.page1.designReferenceText = localStorage.getItem('designReferenceText');
+
+            const token = localStorage.getItem('editToken');
+            
+            // 4. Disparar el envío híbrido
+            await submitForm(allFormData, token);
         });
     }
 });
 
-// 🔥 NUEVA FUNCIÓN SUBMIT: Soporta archivos y Cloudinary
+// FUNCIÓN DE ENVÍO HÍBRIDO (Texto + Archivos)
 async function submitForm(formData, editToken = null) {
     try {
         const endpoint = editToken ? '/update' : '/submit';
-        console.log('🚀 Preparando envío híbrido (Texto + Archivos)...');
-
-        // 1. Crear el contenedor "FormData" (necesario para enviar archivos)
         const dataToSend = new FormData();
 
-        // 2. Adjuntar los datos de texto (el JSON de siempre)
-        // Lo enviamos bajo la clave 'data' como un string
-        const payload = { formData, token: editToken };
+        // Estructura para el backend
+        const payload = { 
+            formData: formData, 
+            token: editToken 
+        };
+
+        // Adjuntar JSON (Como string en el campo 'data')
         dataToSend.append('data', JSON.stringify(payload));
 
-        // 3. Recuperar y adjuntar archivos guardados en los inputs de welcome.html
-        // Buscamos los archivos de la Opción 1 (Ya tengo logo)
+        // Adjuntar archivos solo si existen en el DOM (esto suele pasar en la misma página del submit o vía caché de archivos)
         const logoInput = document.getElementById('logoFiles');
         if (logoInput && logoInput.files.length > 0) {
-            Array.from(logoInput.files).forEach(file => {
+            Array.from(logoInput.files).slice(0, 3).forEach(file => {
                 dataToSend.append('logoFiles', file);
             });
         }
 
-        // Buscamos los archivos de la Opción 2 (Referencias)
-        const refInput = document.getElementById('refFiles');
+        const refInput = document.getElementById('referenceFiles');
         if (refInput && refInput.files.length > 0) {
-            Array.from(refInput.files).forEach(file => {
+            Array.from(refInput.files).slice(0, 5).forEach(file => {
                 dataToSend.append('referenceFiles', file);
             });
         }
 
-        // 4. Enviar mediante Fetch (SIN 'Content-Type' header, el navegador lo pone solo)
         const response = await fetch(`${API_URL}${endpoint}`, {
             method: 'POST',
             body: dataToSend
-            // ❌ No pongas headers de Content-Type aquí, rompería el envío de archivos
         });
 
         const result = await response.json();
-        console.log('📥 RESPUESTA DEL SERVIDOR:', result);
 
         if (result.success) {
-            window.savedFormData = formData;
             showSuccessModal(result.token, result.editLink, formData);
         } else {
-            alert('Error: ' + result.message);
+            alert('❌ Error: ' + result.message);
         }
     } catch (error) {
         console.error('❌ Error submitting form:', error);
-        alert('Error submitting form. Please try again.');
+        alert('Error submitting form. Please check your internet connection.');
     }
 }
 
-// --- Las funciones loadExistingFormData, fillFormFields, etc., se mantienen igual ---
-// (Tu código de carga y logs originales sigue aquí abajo...)
-
 async function loadExistingFormData(token) {
     try {
-        console.log('🔄 Cargando datos del token:', token);
-        const response = await fetch(`${API_URL}/get/${token}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            mode: 'cors'
-        });
-        
+        const response = await fetch(`${API_URL}/get/${token}`);
         const data = await response.json();
+        
         if (data.success) {
-            localStorage.removeItem('formData');
-            formManager.clearData();
+            // No limpiamos aquí porque ya lo hicimos arriba si era necesario
             localStorage.setItem('formData', JSON.stringify(data.formData));
-            localStorage.setItem('editToken', token);
-            await new Promise(resolve => setTimeout(resolve, 200));
+            
+            // Persistir datos de identidad visual para que Welcome y el submit final los usen
+            if (data.formData.page1) {
+                localStorage.setItem('gameroomName', data.formData.page1.companyName || '');
+                localStorage.setItem('logoOption', data.formData.page1.logoOption || '');
+                localStorage.setItem('designReferenceText', data.formData.page1.designReferenceText || '');
+            }
+            
             fillFormFields(data.formData);
             showEditMode();
         }
     } catch (error) {
-        const isSafariGhost = (error.stack && error.stack.includes('webkit')) || (error.message === 'Load failed');
-        if (isSafariGhost) return;
-        console.error('❌ Error:', error);
+        console.error('❌ Error cargando datos:', error);
     }
 }
 
 function fillFormFields(data) {
-    const currentPage = window.location.pathname.includes('page2') ? 'page2' : 'page1';
-    const pageData = data[currentPage];
-    if (!pageData) return;
+    const isPage2 = window.location.pathname.includes('page2');
+    const isIndex = window.location.pathname.includes('index.html') || window.location.pathname.endsWith('/');
+    const isWelcome = !isPage2 && !isIndex;
 
-    if (currentPage === 'page1') {
-        const companyNameEl = document.getElementById('companyName');
-        if (companyNameEl && pageData.companyName) companyNameEl.textContent = pageData.companyName;
+    const page1Data = data.page1 || {};
+    const page2Data = data.page2 || {};
+
+    if (isWelcome) {
+        const grInput = document.getElementById('gameroomName');
+        if (grInput) grInput.value = page1Data.companyName || '';
         
+        if (page1Data.logoOption) {
+            const radio = document.querySelector(`input[name="logoOption"][value="${page1Data.logoOption}"]`);
+            if (radio) {
+                radio.checked = true;
+                if (typeof toggleSelection === 'function') toggleSelection(page1Data.logoOption);
+            }
+        }
+        
+        const designText = document.getElementById('designReferenceText');
+        if (designText) designText.value = page1Data.designReferenceText || '';
+    }
+
+    if (isIndex) {
+        const companyLabel = document.getElementById('companyNameDisplay'); // Asegúrate de tener este ID en el HTML
+        if (companyLabel) companyLabel.textContent = page1Data.companyName || 'N/A';
+
         ['facebook', 'instagram', 'twitter', 'other'].forEach(field => {
             const el = document.getElementById(field);
-            if (el) el.value = pageData[field] || '';
+            if (el) el.value = page1Data[field] || '';
         });
-    } else if (currentPage === 'page2') {
+    }
+
+    if (isPage2) {
         const container = document.getElementById('managersContainer');
-        if (container && pageData.managers) {
-            fillManagerFields(1, pageData.managers[0]);
-            for (let i = 1; i < pageData.managers.length; i++) {
-                if (typeof addManagerBlock === 'function') addManagerBlock(i + 1, pageData.managers[i]);
+        if (container && page2Data.managers) {
+            // Llenar el primer manager (que siempre existe)
+            fillManagerFields(1, page2Data.managers[0]);
+            
+            // Crear bloques y llenar para el resto
+            for (let i = 1; i < page2Data.managers.length; i++) {
+                if (typeof addManagerBlock === 'function') {
+                    addManagerBlock(i + 1, page2Data.managers[i]);
+                }
             }
         }
     }
 }
 
 function fillManagerFields(managerNum, data) {
+    if (!data) return;
     ['username', 'fullname', 'role', 'email', 'password'].forEach(field => {
         const el = document.getElementById(`${field}_${managerNum}`);
         if (el) el.value = data[field] || '';
@@ -205,13 +237,14 @@ function showSuccessModal(token, editLink, formData) {
     const modal = document.getElementById('modalConfirmacion');
     const editLinkInput = document.getElementById('editLink');
     if (!modal || !editLinkInput) return;
+
     editLinkInput.value = editLink;
     modal.classList.remove('hidden');
 
     document.getElementById('copyLink')?.addEventListener('click', () => {
         editLinkInput.select();
         document.execCommand('copy');
-        alert('Link copied!');
+        alert('Link copied to clipboard!');
     });
 
     document.getElementById('downloadPDF')?.addEventListener('click', () => {
@@ -219,9 +252,8 @@ function showSuccessModal(token, editLink, formData) {
     });
 
     document.getElementById('closeModal')?.addEventListener('click', () => {
-        formManager.clearData();
-        localStorage.removeItem('editToken');
-        window.location.href = '/thank-you';
+        formManager.clearData(); // Limpieza final al terminar con éxito
+        window.location.href = 'welcome.html';
     });
 }
 
@@ -230,7 +262,7 @@ function showEditMode() {
     if (!container || document.querySelector('.edit-mode-banner')) return;
     const banner = document.createElement('div');
     banner.className = 'edit-mode-banner';
-    banner.textContent = '📝 Edit Mode - You are modifying an existing form';
     banner.style.cssText = 'background: #ffc107; color: #000; padding: 10px; text-align: center; font-weight: bold; margin-bottom: 20px; border-radius: 5px;';
+    banner.textContent = '📝 Edit Mode - Modifying existing form';
     container.prepend(banner);
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,7 +31,7 @@
         }
         .radio-card:hover { background-color: #f9f9f9; }
         .radio-card input[type="radio"] { width: 18px; height: 18px; cursor: pointer; }
-        .radio-card.active { border-color: #007bff; background-color: #f0f7ff; }
+        .radio-card.active { border-color: #667eea; background-color: #f0f7ff; }
         
         .upload-zone {
             display: none;
@@ -56,17 +56,43 @@
         }
         textarea {
             width: 100%;
-            height: 80px;
+            height: 100px;
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ccc;
             margin-top: 10px;
             resize: none;
+            font-family: inherit;
+        }
+        .char-counter {
+            font-size: 12px;
+            color: #666;
+            text-align: right;
+            margin-top: 4px;
+        }
+
+        /* Estilo para el Overlay de Bloqueo */
+        .session-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            text-align: center;
+            border-radius: 12px;
+            padding: 20px;
+            box-sizing: border-box;
         }
     </style>
 </head>
 <body>
-    <div class="form-container">
+    <div class="form-container" style="position: relative;">
         <div class="logo-container">
             <img src="assets/images/wysaro-isologo-black.png" alt="Wysaro Gaming" class="logo" style="max-width: 250px;">
         </div>
@@ -94,7 +120,6 @@
 
             <div class="logo-selection-box">
                 <label style="font-size: 16px; font-weight: 600; display: block; text-align: center;">Logo Identity</label>
-                
                 <p style="font-size: 14px; color: #666; margin-top: 5px; text-align: center;">How would you like to handle your logo?</p>
                 
                 <div class="option-group">
@@ -102,7 +127,7 @@
                         <input type="radio" name="logoOption" value="has-logo" onclick="toggleSelection('has-logo')">
                         <div>
                             <strong>I already have a logo</strong>
-                            <div style="font-size: 12px; color: #777;">Upload up to 3 files</div>
+                            <div style="font-size: 12px; color: #777;">Upload up to 3 files (PNG, JPG, SVG)</div>
                         </div>
                     </label>
 
@@ -123,15 +148,16 @@
 
                 <div id="zone-needs-logo" class="upload-zone">
                     <label style="font-size: 14px; font-weight: 600;">Design details:</label>
-                    <textarea id="designText" placeholder="Describe your idea..."></textarea>
+                    <textarea id="designReferenceText" maxlength="200" placeholder="Describe your idea (colors, style, elements)..." oninput="updateCharCount(this)"></textarea>
+                    <div class="char-counter" id="charCount">0 / 200</div>
                     
                     <label style="font-size: 14px; font-weight: 600; display: block; margin-top: 15px;">Reference images:</label>
-                    <input type="file" id="refFiles" name="refFiles" multiple accept="image/*" onchange="handlePreview(this, 'preview-ref')">
+                    <input type="file" id="referenceFiles" name="referenceFiles" multiple accept="image/*" onchange="handlePreview(this, 'preview-ref')">
                     <div id="preview-ref" class="preview-grid"></div>
                 </div>
             </div>
             
-            <div id="errorMessage" class="error-message" style="display: none; margin-top: 15px;"></div>
+            <div id="errorMessage" class="error-message" style="display: none; margin-top: 15px; background: #fff2f2; color: #d9534f; padding: 10px; border-radius: 5px; text-align: center;"></div>
             
             <button type="submit" class="btn-next" style="width: 100%; margin-top: 25px;">
                 Continue →
@@ -140,19 +166,62 @@
     </div>
     
     <script>
-        // Manejo visual de las opciones
-        function toggleSelection(option) {
-            console.log('🔄 [UI] Opción seleccionada:', option);
+        // --- 🛡️ GUARDIÁN DE SESIÓN Y BLOQUEO DE DUPLICADOS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const editTokenUrl = urlParams.get('token');
             
-            // Ocultar zonas
+            // 1. Prioridad: Link de Edición Oficial
+            if (editTokenUrl) {
+                console.log('🔗 [GUARD] Token detectado en URL. Limpiando caché local para carga fresca.');
+                localStorage.clear(); 
+                // form-handler.js se encargará de hacer el fetch con este token
+                return; 
+            }
+
+            // 2. Bloqueo de Duplicados (Sesión activa en LocalStorage)
+            const existingName = localStorage.getItem('gameroomName');
+            const existingToken = localStorage.getItem('editToken');
+
+            if (existingName || existingToken) {
+                console.log('⚠️ [GUARD] Detectada sesión local activa.');
+                showSessionBlocker(existingName);
+            }
+        });
+
+        function showSessionBlocker(name) {
+            const container = document.querySelector('.form-container');
+            const overlay = document.createElement('div');
+            overlay.className = 'session-overlay';
+            
+            overlay.innerHTML = `
+                <h3 style="color: #667eea; margin-bottom: 15px;">Welcome back!</h3>
+                <p style="margin-bottom: 10px;">You have an active registration process for:</p>
+                <p style="font-weight: bold; font-size: 18px; margin-bottom: 25px;">${name || 'Incomplete Company'}</p>
+                <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 250px;">
+                    <button onclick="window.location.href='index.html'" class="btn-next" style="background: #28a745; margin:0;">Continue Progress</button>
+                    <button onclick="resetSession()" class="btn-next" style="background: #dc3545; margin:0;">Start New Registration</button>
+                </div>
+                <p style="font-size: 11px; color: #999; margin-top: 20px;">* Starting a new registration will delete current unsaved data.</p>
+            `;
+            container.appendChild(overlay);
+        }
+
+        function resetSession() {
+            if(confirm('Are you sure you want to start a new registration? All current data will be lost.')) {
+                localStorage.clear();
+                window.location.reload();
+            }
+        }
+
+        // --- MANEJO DEL FORMULARIO ---
+
+        function toggleSelection(option) {
             document.getElementById('zone-has-logo').style.display = 'none';
             document.getElementById('zone-needs-logo').style.display = 'none';
-            
-            // Limpiar clases activas
             document.getElementById('card-has-logo').classList.remove('active');
             document.getElementById('card-needs-logo').classList.remove('active');
 
-            // Mostrar zona correspondiente
             if(option === 'has-logo') {
                 document.getElementById('zone-has-logo').style.display = 'block';
                 document.getElementById('card-has-logo').classList.add('active');
@@ -162,73 +231,55 @@
             }
         }
 
-        // Manejo de previsualización de imágenes
+        function updateCharCount(textarea) {
+            document.getElementById('charCount').textContent = `${textarea.value.length} / 200`;
+        }
+
         function handlePreview(input, containerId) {
             const container = document.getElementById(containerId);
             container.innerHTML = '';
+            const maxFiles = containerId === 'preview-logo' ? 3 : 5;
             
-            if (input.files) {
-                Array.from(input.files).forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = document.createElement('img');
-                        img.src = e.target.result;
-                        img.className = 'preview-img';
-                        container.appendChild(img);
-                    }
-                    reader.readAsDataURL(file);
-                });
+            if (input.files.length > maxFiles) {
+                alert(`Maximum ${maxFiles} images allowed.`);
+                input.value = "";
+                return;
             }
+
+            Array.from(input.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'preview-img';
+                    container.appendChild(img);
+                }
+                reader.readAsDataURL(file);
+            });
         }
 
-        // Manejo del Submit
         document.getElementById('welcomeForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
             const gameroomName = document.getElementById('gameroomName').value.trim();
             const logoOption = document.querySelector('input[name="logoOption"]:checked')?.value;
-            const errorDiv = document.getElementById('errorMessage');
             
-            // Validaciones básicas
-            if (gameroomName.length < 3) {
-                errorDiv.textContent = '⚠️ Gameroom name must be at least 3 characters long';
-                errorDiv.style.display = 'block';
-                return;
-            }
+            if (gameroomName.length < 3) return showError('⚠️ Name too short');
+            if (!logoOption) return showError('⚠️ Select a logo option');
 
-            if (!logoOption) {
-                errorDiv.textContent = '⚠️ Please select a logo preference';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            // Si elige creación, validar que haya texto o imagen
-            if (logoOption === 'needs-logo') {
-                const text = document.getElementById('designText').value.trim();
-                const files = document.getElementById('refFiles').files.length;
-                if (!text && files === 0) {
-                    errorDiv.textContent = '⚠️ Please provide a description or reference images for your logo';
-                    errorDiv.style.display = 'block';
-                    return;
-                }
-            }
-
-            // Guardar datos temporales en localStorage 
-            // Nota: Los archivos no se guardan en localStorage, se enviarán al final desde index
             localStorage.setItem('gameroomName', gameroomName);
             localStorage.setItem('logoOption', logoOption);
             if (logoOption === 'needs-logo') {
-                localStorage.setItem('designReferenceText', document.getElementById('designText').value);
+                localStorage.setItem('designReferenceText', document.getElementById('designReferenceText').value);
             }
-            
-            console.log('✅ Datos base guardados, navegando a index...');
-            window.location.href = '/index';
+
+            window.location.href = 'index.html';
         });
 
-        // Limpiar error al escribir
-        document.getElementById('gameroomName').addEventListener('input', function() {
-            document.getElementById('errorMessage').style.display = 'none';
-        });
+        function showError(msg) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = msg;
+            errorDiv.style.display = 'block';
+        }
     </script>
 </body>
 </html>
