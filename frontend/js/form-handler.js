@@ -9,6 +9,7 @@ class FormDataManager {
     savePageData(page, data) {
         let allData = this.getAllData();
         allData[`page${page}`] = data;
+        console.log(`📦 GUARDANDO page${page} en localStorage:`, data);
         localStorage.setItem(this.storageKey, JSON.stringify(allData));
     }
    
@@ -23,23 +24,36 @@ class FormDataManager {
     }
    
     clearData() {
+        // Limpiamos todo el rastro de la sesión actual
         localStorage.removeItem(this.storageKey);
         localStorage.removeItem('editToken');
         localStorage.removeItem('gameroomName');
         localStorage.removeItem('logoOption');
         localStorage.removeItem('designReferenceText');
+        console.log("🧹 LocalStorage limpiado.");
     }
 }
 
 const formManager = new FormDataManager();
 
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('📄 DOM cargado, inicializando...');
+    
     const urlParams = new URLSearchParams(window.location.search);
     const editToken = urlParams.get('token');
     
     const isWelcome = !window.location.pathname.includes('page2') && !window.location.pathname.includes('index');
+    const isPage2 = window.location.pathname.includes('page2');
+
+    // 🔥 CORRECCIÓN CRÍTICA: Limpieza si se borra el token manualmente de la URL
+    // Si NO hay token en la URL, pero el navegador todavía recuerda uno de una sesión previa, limpiamos.
+    if (!editToken && localStorage.getItem('editToken')) {
+        console.log('🧹 Limpieza de seguridad: Se detectó rastro de edición sin token activo en URL.');
+        formManager.clearData();
+    }
 
     if (editToken) {
+        // Solo limpiar si entramos con un token NUEVO o distinto al actual para evitar mezclas
         if (isWelcome && localStorage.getItem('editToken') !== editToken) {
             formManager.clearData();
         }
@@ -135,7 +149,7 @@ function fillFormFields(data) {
     const page2Data = data.page2 || {};
 
     if (isIndex) {
-        // 🔥 CORRECCIÓN: Inyectar el nombre en el span editable con ID "companyName"
+        // Inyectar el nombre en el span editable con ID "companyName"
         const companySpan = document.getElementById('companyName');
         if (companySpan && page1Data.companyName) {
             companySpan.textContent = page1Data.companyName;
