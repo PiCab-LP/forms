@@ -165,121 +165,115 @@
         </form>
     </div>
     
-    <script>
-        // --- 🛡️ GUARDIÁN DE SESIÓN Y BLOQUEO DE DUPLICADOS ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const editTokenUrl = urlParams.get('token');
+<script>
+    // --- 🛡️ GUARDIÁN DE SESIÓN Y BLOQUEO ESTRICTO ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const editTokenUrl = urlParams.get('token');
+        
+        // 1. Prioridad: Link de Edición Oficial (vía URL)
+        if (editTokenUrl) {
+            console.log('🔗 [GUARD] Edición oficial detectada. Limpiando caché para carga fresca.');
+            localStorage.clear(); 
+            // El form-handler.js cargará los datos del servidor usando este token
+            return; 
+        }
+
+        // 2. BLOQUEO PREVENTIVO: Si ya hay datos pero NO hay token en la URL
+        const savedName = localStorage.getItem('gameroomName');
+
+        if (savedName) {
+            console.log(`🚫 [GUARD] Registro previo detectado para: ${savedName}. Bloqueando acceso.`);
             
-            // 1. Prioridad: Link de Edición Oficial
-            if (editTokenUrl) {
-                console.log('🔗 [GUARD] Token detectado en URL. Limpiando caché local para carga fresca.');
-                localStorage.clear(); 
-                // form-handler.js se encargará de hacer el fetch con este token
-                return; 
-            }
-
-            // 2. Bloqueo de Duplicados (Sesión activa en LocalStorage)
-            const existingName = localStorage.getItem('gameroomName');
-            const existingToken = localStorage.getItem('editToken');
-
-            if (existingName || existingToken) {
-                console.log('⚠️ [GUARD] Detectada sesión local activa.');
-                showSessionBlocker(existingName);
-            }
-        });
-
-        function showSessionBlocker(name) {
             const container = document.querySelector('.form-container');
-            const overlay = document.createElement('div');
-            overlay.className = 'session-overlay';
-            
-            overlay.innerHTML = `
-                <h3 style="color: #667eea; margin-bottom: 15px;">Welcome back!</h3>
-                <p style="margin-bottom: 10px;">You have an active registration process for:</p>
-                <p style="font-weight: bold; font-size: 18px; margin-bottom: 25px;">${name || 'Incomplete Company'}</p>
-                <div style="display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 250px;">
-                    <button onclick="window.location.href='index.html'" class="btn-next" style="background: #28a745; margin:0;">Continue Progress</button>
-                    <button onclick="resetSession()" class="btn-next" style="background: #dc3545; margin:0;">Start New Registration</button>
-                </div>
-                <p style="font-size: 11px; color: #999; margin-top: 20px;">* Starting a new registration will delete current unsaved data.</p>
-            `;
-            container.appendChild(overlay);
-        }
-
-        function resetSession() {
-            if(confirm('Are you sure you want to start a new registration? All current data will be lost.')) {
-                localStorage.clear();
-                window.location.reload();
+            if (container) {
+                // Reemplazamos el contenido para evitar que llenen el formulario de nuevo
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px;">
+                        <div style="font-size: 50px; margin-bottom: 20px;">✅</div>
+                        <h2 style="color: #333; margin-bottom: 15px;">Formulario ya completado</h2>
+                        <p style="color: #666; line-height: 1.6; margin-bottom: 25px;">
+                            Ya has llenado un formulario previamente para <strong>${savedName}</strong>.<br><br>
+                            Para realizar cambios o editar tu información, por favor <strong>verifica tu correo electrónico</strong> 
+                            y utiliza el enlace de edición seguro que te enviamos.
+                        </p>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee; font-size: 12px; color: #999;">
+                            Si necesitas registrar una compañía diferente, por favor limpia los datos de tu navegador o contacta a soporte.
+                        </div>
+                    </div>
+                `;
             }
+            return; // Detenemos la ejecución del resto del script
+        }
+    });
+
+    // --- MANEJO DEL FORMULARIO (Solo se ejecuta si no hay bloqueo) ---
+
+    function toggleSelection(option) {
+        document.getElementById('zone-has-logo').style.display = 'none';
+        document.getElementById('zone-needs-logo').style.display = 'none';
+        document.getElementById('card-has-logo').classList.remove('active');
+        document.getElementById('card-needs-logo').classList.remove('active');
+
+        if(option === 'has-logo') {
+            document.getElementById('zone-has-logo').style.display = 'block';
+            document.getElementById('card-has-logo').classList.add('active');
+        } else {
+            document.getElementById('zone-needs-logo').style.display = 'block';
+            document.getElementById('card-needs-logo').classList.add('active');
+        }
+    }
+
+    function updateCharCount(textarea) {
+        document.getElementById('charCount').textContent = `${textarea.value.length} / 200`;
+    }
+
+    function handlePreview(input, containerId) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        const maxFiles = containerId === 'preview-logo' ? 3 : 5;
+        
+        if (input.files.length > maxFiles) {
+            alert(`Maximum ${maxFiles} images allowed.`);
+            input.value = "";
+            return;
         }
 
-        // --- MANEJO DEL FORMULARIO ---
-
-        function toggleSelection(option) {
-            document.getElementById('zone-has-logo').style.display = 'none';
-            document.getElementById('zone-needs-logo').style.display = 'none';
-            document.getElementById('card-has-logo').classList.remove('active');
-            document.getElementById('card-needs-logo').classList.remove('active');
-
-            if(option === 'has-logo') {
-                document.getElementById('zone-has-logo').style.display = 'block';
-                document.getElementById('card-has-logo').classList.add('active');
-            } else {
-                document.getElementById('zone-needs-logo').style.display = 'block';
-                document.getElementById('card-needs-logo').classList.add('active');
+        Array.from(input.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'preview-img';
+                container.appendChild(img);
             }
-        }
-
-        function updateCharCount(textarea) {
-            document.getElementById('charCount').textContent = `${textarea.value.length} / 200`;
-        }
-
-        function handlePreview(input, containerId) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = '';
-            const maxFiles = containerId === 'preview-logo' ? 3 : 5;
-            
-            if (input.files.length > maxFiles) {
-                alert(`Maximum ${maxFiles} images allowed.`);
-                input.value = "";
-                return;
-            }
-
-            Array.from(input.files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.className = 'preview-img';
-                    container.appendChild(img);
-                }
-                reader.readAsDataURL(file);
-            });
-        }
-
-        document.getElementById('welcomeForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const gameroomName = document.getElementById('gameroomName').value.trim();
-            const logoOption = document.querySelector('input[name="logoOption"]:checked')?.value;
-            
-            if (gameroomName.length < 3) return showError('⚠️ Name too short');
-            if (!logoOption) return showError('⚠️ Select a logo option');
-
-            localStorage.setItem('gameroomName', gameroomName);
-            localStorage.setItem('logoOption', logoOption);
-            if (logoOption === 'needs-logo') {
-                localStorage.setItem('designReferenceText', document.getElementById('designReferenceText').value);
-            }
-
-            window.location.href = 'index.html';
+            reader.readAsDataURL(file);
         });
+    }
 
-        function showError(msg) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = msg;
-            errorDiv.style.display = 'block';
+    document.getElementById('welcomeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const gameroomName = document.getElementById('gameroomName').value.trim();
+        const logoOption = document.querySelector('input[name="logoOption"]:checked')?.value;
+        
+        if (gameroomName.length < 3) return showError('⚠️ Name too short');
+        if (!logoOption) return showError('⚠️ Select a logo option');
+
+        localStorage.setItem('gameroomName', gameroomName);
+        localStorage.setItem('logoOption', logoOption);
+        
+        if (logoOption === 'needs-logo') {
+            localStorage.setItem('designReferenceText', document.getElementById('designReferenceText').value);
         }
-    </script>
+
+        window.location.href = 'index.html';
+    });
+
+    function showError(msg) {
+        const errorDiv = document.getElementById('errorMessage');
+        errorDiv.textContent = msg;
+        errorDiv.style.display = 'block';
+    }
+</script>
 </body>
 </html>
