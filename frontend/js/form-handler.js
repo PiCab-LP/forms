@@ -9,7 +9,6 @@ class FormDataManager {
     savePageData(page, data) {
         let allData = this.getAllData();
         allData[`page${page}`] = data;
-        console.log(`📦 GUARDANDO page${page} en localStorage:`, data);
         localStorage.setItem(this.storageKey, JSON.stringify(allData));
     }
    
@@ -18,37 +17,29 @@ class FormDataManager {
         return data ? JSON.parse(data) : {};
     }
 
-    // 🔥 CORRECCIÓN: Método faltante para que navigation.js no de error
     loadPageData(page) {
         const allData = this.getAllData();
         return allData[`page${page}`] || {};
     }
    
     clearData() {
-        // Limpiamos todo el rastro de la sesión actual
         localStorage.removeItem(this.storageKey);
         localStorage.removeItem('editToken');
         localStorage.removeItem('gameroomName');
         localStorage.removeItem('logoOption');
         localStorage.removeItem('designReferenceText');
-        console.log("🧹 LocalStorage limpiado.");
     }
 }
 
 const formManager = new FormDataManager();
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('📄 DOM cargado, inicializando...');
-    
     const urlParams = new URLSearchParams(window.location.search);
     const editToken = urlParams.get('token');
     
-    // Identificar página actual para lógica de carga
     const isWelcome = !window.location.pathname.includes('page2') && !window.location.pathname.includes('index');
-    const isPage2 = window.location.pathname.includes('page2');
 
     if (editToken) {
-        // 🛡️ REGLA DE ORO: Si hay token en URL, priorizamos los datos del servidor
         if (isWelcome && localStorage.getItem('editToken') !== editToken) {
             formManager.clearData();
         }
@@ -64,71 +55,45 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Manejador para el formulario de la Página 2 (Managers)
     const formPage2 = document.getElementById('formPage2');
     if (formPage2) {
         formPage2.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             if (typeof validateManagers === 'function' && !validateManagers()) return;
             
-            // 1. Capturar datos de managers
             const page2Data = getFormDataPage2();
             formManager.savePageData(2, page2Data);
-            
-            // 2. Construir objeto final unificado
             const allFormData = formManager.getAllData();
             
-            // 3. Inyectar datos persistentes de la Página 1 (Welcome) recuperados de localStorage
             if (!allFormData.page1) allFormData.page1 = {};
             allFormData.page1.companyName = localStorage.getItem('gameroomName');
             allFormData.page1.logoOption = localStorage.getItem('logoOption');
             allFormData.page1.designReferenceText = localStorage.getItem('designReferenceText');
 
             const token = localStorage.getItem('editToken');
-            
-            // 4. Disparar el envío híbrido
             await submitForm(allFormData, token);
         });
     }
 });
 
-// FUNCIÓN DE ENVÍO HÍBRIDO (Texto + Archivos)
 async function submitForm(formData, editToken = null) {
     try {
         const endpoint = editToken ? '/update' : '/submit';
         const dataToSend = new FormData();
-
-        // Estructura para el backend
-        const payload = { 
-            formData: formData, 
-            token: editToken 
-        };
-
-        // Adjuntar JSON (Como string en el campo 'data')
+        const payload = { formData: formData, token: editToken };
         dataToSend.append('data', JSON.stringify(payload));
 
-        // Adjuntar archivos de LOGO
         const logoInput = document.getElementById('logoFiles');
         if (logoInput && logoInput.files.length > 0) {
-            Array.from(logoInput.files).slice(0, 3).forEach(file => {
-                dataToSend.append('logoFiles', file);
-            });
+            Array.from(logoInput.files).slice(0, 3).forEach(file => dataToSend.append('logoFiles', file));
         }
 
-        // Adjuntar archivos de REFERENCIA
         const refInput = document.getElementById('referenceFiles');
         if (refInput && refInput.files.length > 0) {
-            Array.from(refInput.files).slice(0, 5).forEach(file => {
-                dataToSend.append('referenceFiles', file);
-            });
+            Array.from(refInput.files).slice(0, 5).forEach(file => dataToSend.append('referenceFiles', file));
         }
 
-        const response = await fetch(`${API_URL}${endpoint}`, {
-            method: 'POST',
-            body: dataToSend
-        });
-
+        const response = await fetch(`${API_URL}${endpoint}`, { method: 'POST', body: dataToSend });
         const result = await response.json();
 
         if (result.success) {
@@ -138,7 +103,6 @@ async function submitForm(formData, editToken = null) {
         }
     } catch (error) {
         console.error('❌ Error submitting form:', error);
-        alert('Error submitting form. Please check your internet connection.');
     }
 }
 
@@ -149,13 +113,11 @@ async function loadExistingFormData(token) {
         
         if (data.success) {
             localStorage.setItem('formData', JSON.stringify(data.formData));
-            
             if (data.formData.page1) {
                 localStorage.setItem('gameroomName', data.formData.page1.companyName || '');
                 localStorage.setItem('logoOption', data.formData.page1.logoOption || '');
                 localStorage.setItem('designReferenceText', data.formData.page1.designReferenceText || '');
             }
-            
             fillFormFields(data.formData);
             showEditMode();
         }
@@ -172,9 +134,25 @@ function fillFormFields(data) {
     const page1Data = data.page1 || {};
     const page2Data = data.page2 || {};
 
+    if (isIndex) {
+        // 🔥 CORRECCIÓN: Inyectar el nombre en el span editable con ID "companyName"
+        const companySpan = document.getElementById('companyName');
+        if (companySpan && page1Data.companyName) {
+            companySpan.textContent = page1Data.companyName;
+        }
+
+        ['facebook', 'instagram', 'twitter', 'other'].forEach(field => {
+            const el = document.getElementById(field);
+            if (el) el.value = page1Data[field] || '';
+        });
+    }
+
     if (isWelcome) {
         const grInput = document.getElementById('gameroomName');
         if (grInput) grInput.value = page1Data.companyName || '';
+        
+        const grHeader = document.getElementById('companyNameHeader');
+        if (grHeader && page1Data.companyName) grHeader.textContent = page1Data.companyName;
         
         if (page1Data.logoOption) {
             const radio = document.querySelector(`input[name="logoOption"][value="${page1Data.logoOption}"]`);
@@ -188,24 +166,12 @@ function fillFormFields(data) {
         if (designText) designText.value = page1Data.designReferenceText || '';
     }
 
-    if (isIndex) {
-        const companyLabel = document.getElementById('companyNameDisplay'); 
-        if (companyLabel) companyLabel.textContent = page1Data.companyName || 'N/A';
-
-        ['facebook', 'instagram', 'twitter', 'other'].forEach(field => {
-            const el = document.getElementById(field);
-            if (el) el.value = page1Data[field] || '';
-        });
-    }
-
     if (isPage2) {
         const container = document.getElementById('managersContainer');
         if (container && page2Data.managers) {
             fillManagerFields(1, page2Data.managers[0]);
             for (let i = 1; i < page2Data.managers.length; i++) {
-                if (typeof addManagerBlock === 'function') {
-                    addManagerBlock(i + 1, page2Data.managers[i]);
-                }
+                if (typeof addManagerBlock === 'function') addManagerBlock(i + 1, page2Data.managers[i]);
             }
         }
     }
@@ -238,20 +204,8 @@ function showSuccessModal(token, editLink, formData) {
     const modal = document.getElementById('modalConfirmacion');
     const editLinkInput = document.getElementById('editLink');
     if (!modal || !editLinkInput) return;
-
     editLinkInput.value = editLink;
     modal.classList.remove('hidden');
-
-    document.getElementById('copyLink')?.addEventListener('click', () => {
-        editLinkInput.select();
-        document.execCommand('copy');
-        alert('Link copied to clipboard!');
-    });
-
-    document.getElementById('downloadPDF')?.addEventListener('click', () => {
-        if (typeof generatePDF === 'function') generatePDF(formData);
-    });
-
     document.getElementById('closeModal')?.addEventListener('click', () => {
         formManager.clearData();
         window.location.href = 'welcome.html';
