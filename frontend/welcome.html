@@ -6,6 +6,64 @@
     <title>Wysaro Gaming - Welcome</title>
     <link rel="icon" type="image/x-icon" href="./imgs/wysaro-isologo-black.png">
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Estilos específicos para la sección de logos */
+        .logo-selection-box {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .radio-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border: 2px solid #f0f0f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .radio-card:hover { background-color: #f9f9f9; }
+        .radio-card input[type="radio"] { width: 18px; height: 18px; cursor: pointer; }
+        .radio-card.active { border-color: #007bff; background-color: #f0f7ff; }
+        
+        .upload-zone {
+            display: none;
+            margin-top: 15px;
+            padding: 20px;
+            background: #fafafa;
+            border: 1px dashed #ccc;
+            border-radius: 8px;
+        }
+        .preview-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .preview-img {
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        textarea {
+            width: 100%;
+            height: 80px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-top: 10px;
+            resize: none;
+        }
+    </style>
 </head>
 <body>
     <div class="form-container">
@@ -33,42 +91,143 @@
                 >
                 <small class="input-help">Minimum 3 characters</small>
             </div>
+
+            <div class="logo-selection-box">
+                <label style="font-size: 16px; font-weight: 600; display: block; text-align: center;">Logo Identity</label>
+                
+                <p style="font-size: 14px; color: #666; margin-top: 5px; text-align: center;">How would you like to handle your logo?</p>
+                
+                <div class="option-group">
+                    <label class="radio-card" id="card-has-logo">
+                        <input type="radio" name="logoOption" value="has-logo" onclick="toggleSelection('has-logo')">
+                        <div>
+                            <strong>I already have a logo</strong>
+                            <div style="font-size: 12px; color: #777;">Upload up to 3 files</div>
+                        </div>
+                    </label>
+
+                    <label class="radio-card" id="card-needs-logo">
+                        <input type="radio" name="logoOption" value="needs-logo" onclick="toggleSelection('needs-logo')">
+                        <div>
+                            <strong>I want a logo to be created for me</strong>
+                            <div style="font-size: 12px; color: #777;">References: Text or Images (up to 5)</div>
+                        </div>
+                    </label>
+                </div>
+
+                <div id="zone-has-logo" class="upload-zone">
+                    <label style="font-size: 14px; font-weight: 600;">Upload your logo(s):</label>
+                    <input type="file" id="logoFiles" name="logoFiles" multiple accept="image/*" onchange="handlePreview(this, 'preview-logo')">
+                    <div id="preview-logo" class="preview-grid"></div>
+                </div>
+
+                <div id="zone-needs-logo" class="upload-zone">
+                    <label style="font-size: 14px; font-weight: 600;">Design details:</label>
+                    <textarea id="designText" placeholder="Describe your idea..."></textarea>
+                    
+                    <label style="font-size: 14px; font-weight: 600; display: block; margin-top: 15px;">Reference images:</label>
+                    <input type="file" id="refFiles" name="refFiles" multiple accept="image/*" onchange="handlePreview(this, 'preview-ref')">
+                    <div id="preview-ref" class="preview-grid"></div>
+                </div>
+            </div>
             
-            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            <div id="errorMessage" class="error-message" style="display: none; margin-top: 15px;"></div>
             
-            <button type="submit" class="btn-next" style="width: 100%; margin-top: 20px;">
+            <button type="submit" class="btn-next" style="width: 100%; margin-top: 25px;">
                 Continue →
             </button>
         </form>
     </div>
     
     <script>
+        // Manejo visual de las opciones
+        function toggleSelection(option) {
+            console.log('🔄 [UI] Opción seleccionada:', option);
+            
+            // Ocultar zonas
+            document.getElementById('zone-has-logo').style.display = 'none';
+            document.getElementById('zone-needs-logo').style.display = 'none';
+            
+            // Limpiar clases activas
+            document.getElementById('card-has-logo').classList.remove('active');
+            document.getElementById('card-needs-logo').classList.remove('active');
+
+            // Mostrar zona correspondiente
+            if(option === 'has-logo') {
+                document.getElementById('zone-has-logo').style.display = 'block';
+                document.getElementById('card-has-logo').classList.add('active');
+            } else {
+                document.getElementById('zone-needs-logo').style.display = 'block';
+                document.getElementById('card-needs-logo').classList.add('active');
+            }
+        }
+
+        // Manejo de previsualización de imágenes
+        function handlePreview(input, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            if (input.files) {
+                Array.from(input.files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'preview-img';
+                        container.appendChild(img);
+                    }
+                    reader.readAsDataURL(file);
+                });
+            }
+        }
+
+        // Manejo del Submit
         document.getElementById('welcomeForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const gameroomName = document.getElementById('gameroomName').value.trim();
+            const logoOption = document.querySelector('input[name="logoOption"]:checked')?.value;
             const errorDiv = document.getElementById('errorMessage');
             
-            // Validar nombre
+            // Validaciones básicas
             if (gameroomName.length < 3) {
                 errorDiv.textContent = '⚠️ Gameroom name must be at least 3 characters long';
                 errorDiv.style.display = 'block';
                 return;
             }
-            
-            // Guardar en localStorage
+
+            if (!logoOption) {
+                errorDiv.textContent = '⚠️ Please select a logo preference';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            // Si elige creación, validar que haya texto o imagen
+            if (logoOption === 'needs-logo') {
+                const text = document.getElementById('designText').value.trim();
+                const files = document.getElementById('refFiles').files.length;
+                if (!text && files === 0) {
+                    errorDiv.textContent = '⚠️ Please provide a description or reference images for your logo';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
+            }
+
+            // Guardar datos temporales en localStorage 
+            // Nota: Los archivos no se guardan en localStorage, se enviarán al final desde index
             localStorage.setItem('gameroomName', gameroomName);
+            localStorage.setItem('logoOption', logoOption);
+            if (logoOption === 'needs-logo') {
+                localStorage.setItem('designReferenceText', document.getElementById('designText').value);
+            }
             
-            // Redirigir a página 1
+            console.log('✅ Datos base guardados, navegando a index...');
             window.location.href = '/index';
         });
-        
-        // Validación en tiempo real
+
+        // Limpiar error al escribir
         document.getElementById('gameroomName').addEventListener('input', function() {
-            const errorDiv = document.getElementById('errorMessage');
-            if (this.value.length >= 3) {
-                errorDiv.style.display = 'none';
-            }
+            document.getElementById('errorMessage').style.display = 'none';
         });
     </script>
 </body>

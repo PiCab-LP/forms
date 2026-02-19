@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const formController = require('../controllers/form.controller');
+// 🔥 Importamos la configuración de Cloudinary que creamos antes
+const upload = require('../config/cloudinary');
 
 // 🔥 Middleware para logging detallado
 router.use((req, res, next) => {
@@ -13,8 +15,16 @@ router.use((req, res, next) => {
 });
 
 // Guardar nuevo formulario
-router.post('/submit', (req, res, next) => {
+// Se agrega upload.fields para capturar logos y referencias
+router.post('/submit', upload.fields([
+    { name: 'logoFiles', maxCount: 3 },      // Opción 1: Hasta 3 logos
+    { name: 'referenceFiles', maxCount: 5 }  // Opción 2: Hasta 5 referencias
+]), (req, res, next) => {
     console.log('📝 [ROUTE] POST /submit');
+    // Log para verificar si llegaron archivos
+    if (req.files) {
+        console.log('  📁 Files detected:', Object.keys(req.files));
+    }
     next();
 }, formController.submitForm);
 
@@ -27,8 +37,15 @@ router.get('/get/:token', (req, res, next) => {
 }, formController.getForm);
 
 // Actualizar formulario existente
-router.post('/update', (req, res, next) => {
+// Se agrega también aquí el middleware para permitir cambiar fotos en modo edición
+router.post('/update', upload.fields([
+    { name: 'logoFiles', maxCount: 3 },
+    { name: 'referenceFiles', maxCount: 5 }
+]), (req, res, next) => {
     console.log('🔄 [ROUTE] POST /update');
+    if (req.files) {
+        console.log('  📁 Update files detected:', Object.keys(req.files));
+    }
     next();
 }, formController.updateForm);
 

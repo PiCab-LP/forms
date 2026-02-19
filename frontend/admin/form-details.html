@@ -99,6 +99,49 @@
             word-break: break-word;
         }
 
+        /* --- NUEVOS ESTILOS PARA GALERÍA --- */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .gallery-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #eee;
+            background: #fff;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: contain;
+            padding: 10px;
+        }
+
+        .logo-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .badge-has { background: #e3f2fd; color: #1976d2; }
+        .badge-needs { background: #fff3e0; color: #f57c00; }
+        /* ---------------------------------- */
+
         .manager-card {
             background: #f8f9fa;
             padding: 20px;
@@ -201,7 +244,6 @@
         </div>
 
         <div id="formDetails" style="display: none;">
-            <!-- Header -->
             <div class="details-header">
                 <h1 id="companyName">Loading...</h1>
                 <div class="details-meta">
@@ -216,28 +258,28 @@
                 </div>
             </div>
 
-            <!-- Social Networks -->
+            <div class="section">
+                <h2>🎨 Logo & Branding Identity</h2>
+                <div id="logoIdentitySection">
+                    </div>
+            </div>
+
             <div class="section">
                 <h2>🌐 Social Networks</h2>
                 <div class="info-grid" id="socialNetworks">
-                    <!-- Populated by JS -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Backend Managers -->
             <div class="section">
                 <h2>👥 Backend Managers</h2>
                 <div id="managers">
-                    <!-- Populated by JS -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Version History -->
             <div class="section">
                 <h2>📋 Version History</h2>
                 <div id="versionHistory">
-                    <!-- Populated by JS -->
-                </div>
+                    </div>
             </div>
         </div>
     </div>
@@ -247,30 +289,20 @@
         let currentToken = '';
         let formData = null;
 
-        // 🔐 Verificar JWT antes de cargar
         function checkAuth() {
             const jwtToken = localStorage.getItem('adminToken');
-            
             if (!jwtToken) {
-                console.log('❌ No JWT token found');
                 window.location.href = '/login.html';
                 return false;
             }
-            
             return true;
         }
 
-        // Obtener token de URL
         const urlParams = new URLSearchParams(window.location.search);
         currentToken = urlParams.get('token');
 
-        // Cargar detalles al iniciar
         window.addEventListener('DOMContentLoaded', () => {
-            // 🔐 Verificar autenticación primero
-            if (!checkAuth()) {
-                return;
-            }
-            
+            if (!checkAuth()) return;
             if (!currentToken) {
                 alert('No token provided');
                 window.location.href = '/admin';
@@ -279,19 +311,12 @@
             loadFormDetails();
         });
 
-
-        // Cargar detalles del formulario
         async function loadFormDetails() {
             try {
-                // 🔐 Obtener JWT del localStorage
                 const jwtToken = localStorage.getItem('adminToken');
-                
                 const response = await fetch(`${API_URL}/forms/${currentToken}`, {
-                    headers: {
-                        'Authorization': `Bearer ${jwtToken}`
-                    }
+                    headers: { 'Authorization': `Bearer ${jwtToken}` }
                 });
-                
                 const data = await response.json();
 
                 if (data.success) {
@@ -301,15 +326,14 @@
                     document.getElementById('formDetails').style.display = 'block';
                 } else {
                     alert('Form not found');
-                    window.location.href = '/index';
+                    window.location.href = '/admin';
                 }
             } catch (error) {
-                console.error('Error loading form details:', error);
+                console.error('Error:', error);
                 alert('Error loading form details');
             }
         }
 
-        // Renderizar detalles
         function renderFormDetails(form) {
             // Header
             document.getElementById('companyName').textContent = form.formData?.page1?.companyName || 'N/A';
@@ -318,153 +342,114 @@
             document.getElementById('editCount').textContent = form.editCount;
             document.getElementById('currentVersion').textContent = form.currentVersion;
 
+            // --- 🔥 RENDER LOGO IDENTITY ---
+            const logoDiv = document.getElementById('logoIdentitySection');
+            const p1 = form.formData?.page1 || {};
+            let logoHTML = '';
+
+            if (p1.logoOption === 'has-logo') {
+                logoHTML = `
+                    <div class="logo-badge badge-has">Existing Logo Provided</div>
+                    <div class="gallery-grid">
+                        ${p1.uploadedLogos?.map(url => `
+                            <div class="gallery-item" onclick="window.open('${url}', '_blank')">
+                                <img src="${url}" alt="User Logo">
+                            </div>
+                        `).join('') || '<p>No images found</p>'}
+                    </div>
+                `;
+            } else if (p1.logoOption === 'needs-logo') {
+                logoHTML = `
+                    <div class="logo-badge badge-needs">Needs Logo Creation</div>
+                    <div class="info-item" style="margin-bottom: 15px;">
+                        <div class="info-label">Design Instructions</div>
+                        <div class="info-value">${p1.designReferenceText || 'No description provided'}</div>
+                    </div>
+                    <div class="info-label">Reference Images</div>
+                    <div class="gallery-grid">
+                        ${p1.designReferenceImages?.map(url => `
+                            <div class="gallery-item" onclick="window.open('${url}', '_blank')">
+                                <img src="${url}" alt="Reference Image">
+                            </div>
+                        `).join('') || '<p>No reference images found</p>'}
+                    </div>
+                `;
+            } else {
+                logoHTML = '<p style="color: #999;">No logo preference selected.</p>';
+            }
+            logoDiv.innerHTML = logoHTML;
+
             // Social Networks
             const socialNetworksDiv = document.getElementById('socialNetworks');
-            const socials = form.formData?.page1;
             let socialHTML = '';
-
-            if (socials?.facebook) {
-                socialHTML += `
-                    <div class="info-item">
-                        <div class="info-label">Facebook</div>
-                        <div class="info-value"><a href="${socials.facebook}" target="_blank">${socials.facebook}</a></div>
-                    </div>
-                `;
-            }
-            if (socials?.instagram) {
-                socialHTML += `
-                    <div class="info-item">
-                        <div class="info-label">Instagram</div>
-                        <div class="info-value"><a href="${socials.instagram}" target="_blank">${socials.instagram}</a></div>
-                    </div>
-                `;
-            }
-            if (socials?.twitter) {
-                socialHTML += `
-                    <div class="info-item">
-                        <div class="info-label">X (Twitter)</div>
-                        <div class="info-value"><a href="${socials.twitter}" target="_blank">${socials.twitter}</a></div>
-                    </div>
-                `;
-            }
-            if (socials?.other) {
-                socialHTML += `
-                    <div class="info-item">
-                        <div class="info-label">Other</div>
-                        <div class="info-value"><a href="${socials.other}" target="_blank">${socials.other}</a></div>
-                    </div>
-                `;
-            }
-
+            const socials = ['facebook', 'instagram', 'twitter', 'other'];
+            socials.forEach(s => {
+                if (p1[s]) {
+                    socialHTML += `
+                        <div class="info-item">
+                            <div class="info-label">${s.charAt(0).toUpperCase() + s.slice(1)}</div>
+                            <div class="info-value"><a href="${p1[s]}" target="_blank">${p1[s]}</a></div>
+                        </div>
+                    `;
+                }
+            });
             socialNetworksDiv.innerHTML = socialHTML || '<p style="color: #999;">No social networks provided</p>';
 
             // Managers
             const managersDiv = document.getElementById('managers');
             const managers = form.formData?.page2?.managers || [];
-            
-            if (managers.length > 0) {
-                managersDiv.innerHTML = managers.map((manager, index) => `
-                    <div class="manager-card">
-                        <h3>Manager #${index + 1}</h3>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <div class="info-label">Username</div>
-                                <div class="info-value">${manager.username}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Full Name</div>
-                                <div class="info-value">${manager.fullname}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Role</div>
-                                <div class="info-value">${manager.role}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Email</div>
-                                <div class="info-value">${manager.email}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Password</div>
-                                <div class="info-value"><code style="background: #e9ecef; padding: 4px 8px; border-radius: 4px;">${manager.password}</code></div>
-                            </div>
-                        </div>
+            managersDiv.innerHTML = managers.length > 0 ? managers.map((m, i) => `
+                <div class="manager-card">
+                    <h3>Manager #${i + 1}</h3>
+                    <div class="info-grid">
+                        <div class="info-item"><div class="info-label">Username</div><div class="info-value">${m.username}</div></div>
+                        <div class="info-item"><div class="info-label">Full Name</div><div class="info-value">${m.fullname}</div></div>
+                        <div class="info-item"><div class="info-label">Role</div><div class="info-value">${m.role}</div></div>
+                        <div class="info-item"><div class="info-label">Email</div><div class="info-value">${m.email}</div></div>
+                        <div class="info-item"><div class="info-label">Password</div><div class="info-value"><code>${m.password}</code></div></div>
                     </div>
-                `).join('');
-            } else {
-                managersDiv.innerHTML = '<p style="color: #999;">No managers added</p>';
-            }
+                </div>
+            `).join('') : '<p style="color: #999;">No managers added</p>';
 
-            // Version History
+            // History
             const versionHistoryDiv = document.getElementById('versionHistory');
             const versions = form.versions || [];
-
-            if (versions.length > 0) {
-                versionHistoryDiv.innerHTML = versions.reverse().map(version => {
-                    const changes = version.changes || {};
-                    const hasChanges = Object.keys(changes).length > 0;
-                    
-                    return `
-                        <div class="version-item">
-                            <div class="version-header">
-                                <span class="version-number">Version ${version.versionNumber}</span>
-                                <span class="version-date">${new Date(version.editedAt).toLocaleString()}</span>
-                            </div>
-                            <div style="font-size: 13px; color: #666;">
-                                <strong>IP:</strong> ${version.ipAddress || 'N/A'}<br>
-                                <strong>User Agent:</strong> ${version.userAgent || 'N/A'}
-                            </div>
-                            ${hasChanges ? `
-                                <div class="changes-list">
-                                    <strong style="font-size: 13px;">Changes:</strong>
-                                    ${Object.entries(changes).map(([key, change]) => `
-                                        <div class="change-item">
-                                            • ${key}: <span style="color: #dc3545;">${change.old || 'empty'}</span> → <span style="color: #28a745;">${change.new || 'empty'}</span>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            ` : '<div class="changes-list"><em>Initial submission</em></div>'}
+            versionHistoryDiv.innerHTML = versions.length > 0 ? [...versions].reverse().map(v => {
+                const changes = v.changes || {};
+                const hasChanges = Object.keys(changes).length > 0;
+                return `
+                    <div class="version-item">
+                        <div class="version-header">
+                            <span class="version-number">Version ${v.versionNumber}</span>
+                            <span class="version-date">${new Date(v.editedAt).toLocaleString()}</span>
                         </div>
-                    `;
-                }).join('');
-            } else {
-                versionHistoryDiv.innerHTML = '<p style="color: #999;">No version history available</p>';
-            }
+                        ${hasChanges ? `
+                            <div class="changes-list">
+                                ${Object.entries(changes).map(([k, c]) => `
+                                    <div class="change-item">• ${k}: <span style="color: #dc3545;">${c.old || 'empty'}</span> → <span style="color: #28a745;">${c.new || 'empty'}</span></div>
+                                `).join('')}
+                            </div>
+                        ` : '<div class="changes-list"><em>Initial submission</em></div>'}
+                    </div>
+                `;
+            }).join('') : '<p style="color: #999;">No version history available</p>';
         }
 
-        // Editar formulario
         function editForm() {
-            const editLink = `${window.location.origin}/?token=${currentToken}`;
-            window.open(editLink, '_blank');
+            window.open(`${window.location.origin}/?token=${currentToken}`, '_blank');
         }
 
-        // Eliminar formulario
         async function deleteFormDetail() {
-            if (!confirm('Are you sure you want to delete this form? This action cannot be undone.')) {
-                return;
-            }
-
-            try {
-                // 🔐 Obtener JWT del localStorage
-                const jwtToken = localStorage.getItem('adminToken');
-                
-                const response = await fetch(`${API_URL}/forms/${currentToken}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${jwtToken}`
-                    }
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    alert('Form deleted successfully');
-                    window.location.href = '/admin';
-                } else {
-                    alert('Error deleting form: ' + data.message);
-                }
-            } catch (error) {
-                console.error('Error deleting form:', error);
-                alert('Error deleting form');
+            if (!confirm('Are you sure?')) return;
+            const jwtToken = localStorage.getItem('adminToken');
+            const response = await fetch(`${API_URL}/forms/${currentToken}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${jwtToken}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert('Deleted');
+                window.location.href = '/admin';
             }
         }
     </script>

@@ -5,7 +5,6 @@ exports.getAllForms = async (req, res) => {
     try {
         const { page = 1, limit = 10, search = '' } = req.query;
         
-        // Crear filtro de búsqueda
         let query = {};
         if (search) {
             query = {
@@ -23,7 +22,8 @@ exports.getAllForms = async (req, res) => {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(parseInt(limit))
-            .select('token email formData.page1.companyName createdAt lastEditedAt editCount currentVersion');
+            // 🔥 ACTUALIZADO: Seleccionamos logoOption para mostrar badges en la tabla principal
+            .select('token email formData.page1.companyName formData.page1.logoOption createdAt lastEditedAt editCount currentVersion');
         
         const total = await Form.countDocuments(query);
         
@@ -51,7 +51,6 @@ exports.getAllForms = async (req, res) => {
 exports.getFormDetails = async (req, res) => {
     try {
         const { token } = req.params;
-        
         const form = await Form.findOne({ token });
         
         if (!form) {
@@ -79,9 +78,15 @@ exports.getFormDetails = async (req, res) => {
 exports.getStats = async (req, res) => {
     try {
         const totalForms = await Form.countDocuments();
+        
+        // 🔥 NUEVA ESTADÍSTICA: Cuántos necesitan diseño de logo
+        const needsLogoDesign = await Form.countDocuments({
+            'formData.page1.logoOption': 'needs-logo'
+        });
+
         const formsThisMonth = await Form.countDocuments({
             createdAt: {
-                $gte: new Date(new Date().setDate(1)) // Primer día del mes
+                $gte: new Date(new Date().setDate(1))
             }
         });
         
@@ -104,6 +109,7 @@ exports.getStats = async (req, res) => {
                 totalForms,
                 formsThisMonth,
                 editedForms,
+                needsLogoDesign, // Añadido a la respuesta
                 averageEdits: averageEdits.length > 0 ? averageEdits[0].avgEdits.toFixed(2) : 0
             }
         });
@@ -121,7 +127,6 @@ exports.getStats = async (req, res) => {
 exports.deleteForm = async (req, res) => {
     try {
         const { token } = req.params;
-        
         const form = await Form.findOneAndDelete({ token });
         
         if (!form) {
@@ -152,14 +157,21 @@ exports.exportToCSV = async (req, res) => {
             .sort({ createdAt: -1 })
             .select('token email formData createdAt lastEditedAt editCount');
         
-        // Crear CSV
-        let csv = 'Token,Company Name,Email,Created At,Last Edited,Edit Count,Managers Count\n';
+        // 🔥 ACTUALIZADO: Añadidas columnas de Logo Option y Links de Cloudinary
+        let csv = 'Token,Company Name,Email,Logo Option,Logo/Ref Links,Created At,Last Edited,Edit Count,Managers Count\n';
         
         forms.forEach(form => {
             const companyName = form.formData?.page1?.companyName || 'N/A';
+            const logoOption = form.formData?.page1?.logoOption || 'none';
             const managersCount = form.formData?.page2?.managers?.length || 0;
             
-            csv += `"${form.token}","${companyName}","${form.email}","${form.createdAt}","${form.lastEditedAt || 'Never'}","${form.editCount}","${managersCount}"\n`;
+            // Recolectamos todos los links de imágenes disponibles (ya sean logos o referencias)
+            const imgLinks = [
+                ...(form.formData?.page1?.uploadedLogos || []),
+                ...(form.formData?.page1?.designReferenceImages || [])
+            ].join(' | ');
+            
+            csv += `"${form.token}","${companyName}","${form.email}","${logoOption}","${imgLinks}","${form.createdAt}","${form.lastEditedAt || 'Never'}","${form.editCount}","${managersCount}"\n`;
         });
         
         res.setHeader('Content-Type', 'text/csv');
