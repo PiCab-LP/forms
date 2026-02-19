@@ -7,8 +7,10 @@ if (APPS_SCRIPT_URL) {
     console.log('❌ APPS_SCRIPT_URL no configurada');
 }
 
-// Enviar email al usuario
-const sendEditLinkEmail = async (email, companyName, editLink, managers) => {
+/**
+ * Enviar email al usuario con link de edición y estatus de logo
+ */
+const sendEditLinkEmail = async (email, companyName, editLink, managers, logoOption, designText) => {
     try {
         const response = await fetch(APPS_SCRIPT_URL, {
             method: 'POST',
@@ -18,7 +20,9 @@ const sendEditLinkEmail = async (email, companyName, editLink, managers) => {
                 email,
                 companyName,
                 editLink,
-                managers
+                managers,
+                logoOption, // 🔥 Enviado a Apps Script
+                designText  // 🔥 Enviado a Apps Script
             })
         });
         
@@ -37,8 +41,10 @@ const sendEditLinkEmail = async (email, companyName, editLink, managers) => {
     }
 };
 
-// Enviar notificación al admin
-const sendAdminNotification = async (companyName, email, token, managers) => {
+/**
+ * Enviar notificación al admin con detalles del nuevo logo/referencias
+ */
+const sendAdminNotification = async (companyName, email, token, managers, logoOption, designText) => {
     try {
         const adminLink = `${process.env.FRONTEND_URL}/admin/form-details?token=${token}`;
         
@@ -51,7 +57,9 @@ const sendAdminNotification = async (companyName, email, token, managers) => {
                 email,
                 token,
                 managers,
-                adminLink
+                adminLink,
+                logoOption, // 🔥 Informa al admin si debe diseñar o no
+                designText  // 🔥 Instrucciones directas al correo
             })
         });
         
