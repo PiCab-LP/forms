@@ -17,6 +17,12 @@ class FormDataManager {
         const data = localStorage.getItem(this.storageKey);
         return data ? JSON.parse(data) : {};
     }
+
+    // 🔥 CORRECCIÓN: Método faltante para que navigation.js no de error
+    loadPageData(page) {
+        const allData = this.getAllData();
+        return allData[`page${page}`] || {};
+    }
    
     clearData() {
         // Limpiamos todo el rastro de la sesión actual
@@ -43,7 +49,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (editToken) {
         // 🛡️ REGLA DE ORO: Si hay token en URL, priorizamos los datos del servidor
-        // Solo limpiamos si es la primera vez que entramos con este token (evita limpiar al navegar a page2)
         if (isWelcome && localStorage.getItem('editToken') !== editToken) {
             formManager.clearData();
         }
@@ -103,7 +108,7 @@ async function submitForm(formData, editToken = null) {
         // Adjuntar JSON (Como string en el campo 'data')
         dataToSend.append('data', JSON.stringify(payload));
 
-        // Adjuntar archivos solo si existen en el DOM (esto suele pasar en la misma página del submit o vía caché de archivos)
+        // Adjuntar archivos de LOGO
         const logoInput = document.getElementById('logoFiles');
         if (logoInput && logoInput.files.length > 0) {
             Array.from(logoInput.files).slice(0, 3).forEach(file => {
@@ -111,6 +116,7 @@ async function submitForm(formData, editToken = null) {
             });
         }
 
+        // Adjuntar archivos de REFERENCIA
         const refInput = document.getElementById('referenceFiles');
         if (refInput && refInput.files.length > 0) {
             Array.from(refInput.files).slice(0, 5).forEach(file => {
@@ -142,10 +148,8 @@ async function loadExistingFormData(token) {
         const data = await response.json();
         
         if (data.success) {
-            // No limpiamos aquí porque ya lo hicimos arriba si era necesario
             localStorage.setItem('formData', JSON.stringify(data.formData));
             
-            // Persistir datos de identidad visual para que Welcome y el submit final los usen
             if (data.formData.page1) {
                 localStorage.setItem('gameroomName', data.formData.page1.companyName || '');
                 localStorage.setItem('logoOption', data.formData.page1.logoOption || '');
@@ -185,7 +189,7 @@ function fillFormFields(data) {
     }
 
     if (isIndex) {
-        const companyLabel = document.getElementById('companyNameDisplay'); // Asegúrate de tener este ID en el HTML
+        const companyLabel = document.getElementById('companyNameDisplay'); 
         if (companyLabel) companyLabel.textContent = page1Data.companyName || 'N/A';
 
         ['facebook', 'instagram', 'twitter', 'other'].forEach(field => {
@@ -197,10 +201,7 @@ function fillFormFields(data) {
     if (isPage2) {
         const container = document.getElementById('managersContainer');
         if (container && page2Data.managers) {
-            // Llenar el primer manager (que siempre existe)
             fillManagerFields(1, page2Data.managers[0]);
-            
-            // Crear bloques y llenar para el resto
             for (let i = 1; i < page2Data.managers.length; i++) {
                 if (typeof addManagerBlock === 'function') {
                     addManagerBlock(i + 1, page2Data.managers[i]);
@@ -252,7 +253,7 @@ function showSuccessModal(token, editLink, formData) {
     });
 
     document.getElementById('closeModal')?.addEventListener('click', () => {
-        formManager.clearData(); // Limpieza final al terminar con éxito
+        formManager.clearData();
         window.location.href = 'welcome.html';
     });
 }
