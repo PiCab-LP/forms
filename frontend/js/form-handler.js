@@ -1,37 +1,71 @@
 // ==========================================
-// 1. CONFIGURACIÓN GLOBAL Y CAPTURA DE ARCHIVOS (Base64)
+// 1. CONFIGURACIÓN GLOBAL Y CAPTURA DE ARCHIVOS (A prueba de iOS/iPhone)
 // ==========================================
 const API_URL = 'https://forms-wliu.onrender.com/api/form';
 
-// 🔥 FUNCIÓN TRADUCTORA: Convierte texto Base64 de vuelta a un Archivo físico
+// 🔥 FUNCIÓN TRADUCTORA MEJORADA: Sobrevive a las locuras del iPhone
 function dataURLtoFile(dataurl, filename) {
-    let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
-        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
-    while(n--){
-        u8arr[n] = bstr.charCodeAt(n);
+    try {
+        let arr = dataurl.split(',');
+        
+        // Extraemos el tipo de archivo. Si el iPhone lo manda vacío, forzamos que sea un JPEG por seguridad
+        let mimeMatch = arr[0].match(/:(.*?);/);
+        let mime = (mimeMatch && mimeMatch[1]) ? mimeMatch[1] : 'image/jpeg';
+        
+        let bstr = atob(arr[1]);
+        let n = bstr.length;
+        let u8arr = new Uint8Array(n);
+        while(n--){
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        
+        // Si el iPhone manda la foto sin extensión en el nombre, se la ponemos
+        let finalName = filename;
+        if (!finalName.includes('.')) {
+            finalName += mime === 'image/png' ? '.png' : '.jpg';
+        }
+        
+        return new File([u8arr], finalName, {type: mime});
+    } catch (error) {
+        console.error("❌ Error convirtiendo imagen del iPhone:", error);
+        return null; // Si falla, devolvemos nulo para no romper el resto del formulario
     }
-    return new File([u8arr], filename, {type:mime});
 }
 
-// 🔥 CAPTURA: Lee los archivos, los hace texto y los guarda en LocalStorage
+// 🔥 CAPTURA MEJORADA: Maneja los formatos HEIC y PNG de iOS
 window.handleFiles = async function(input, type) {
     const files = Array.from(input.files);
     
-    // Convertimos los archivos a Base64
     const base64Files = await Promise.all(files.map(file => {
         return new Promise((resolve) => {
             const reader = new FileReader();
-            reader.onload = (e) => resolve({ name: file.name, type: file.type, data: e.target.result });
+            
+            reader.onload = (e) => {
+                // iPhone Fix: Si no trae tipo o nombre válido, lo generamos
+                let fileType = file.type || (file.name.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+                let fileName = file.name || `iphone_upload_${Date.now()}.jpg`;
+                
+                resolve({ name: fileName, type: fileType, data: e.target.result });
+            };
+            
+            reader.onerror = () => {
+                console.error("❌ Error de lectura en Safari/iOS");
+                resolve(null); // Evita que se cuelgue si el iPhone no deja leer la foto
+            };
+            
             reader.readAsDataURL(file);
         });
     }));
 
+    // Filtramos cualquier imagen que el iPhone haya bloqueado o dañado
+    const validFiles = base64Files.filter(f => f !== null);
+
     if (type === 'logo') {
-        localStorage.setItem('tempLogos', JSON.stringify(base64Files));
-        console.log("✅ Logos guardados en LocalStorage (Sobrevivirán al cambio de página):", base64Files.length);
+        localStorage.setItem('tempLogos', JSON.stringify(validFiles));
+        console.log("✅ Logos guardados en LocalStorage:", validFiles.length);
     } else {
-        localStorage.setItem('tempReferences', JSON.stringify(base64Files));
-        console.log("✅ Referencias guardadas en LocalStorage:", base64Files.length);
+        localStorage.setItem('tempReferences', JSON.stringify(validFiles));
+        console.log("✅ Referencias guardadas en LocalStorage:", validFiles.length);
     }
 };
 
@@ -175,7 +209,8 @@ async function submitForm(formData, editToken = null) {
         if (storedLogos.length > 0) {
             console.log(`🚀 Adjuntando ${storedLogos.length} logos reconstruidos.`);
             storedLogos.forEach(fileObj => {
-                dataToSend.append('logoFiles', dataURLtoFile(fileObj.data, fileObj.name));
+                const file = dataURLtoFile(fileObj.data, fileObj.name);
+                if (file) dataToSend.append('logoFiles', file); // 🔥 Agregamos if(file)
             });
         }
 
@@ -183,7 +218,8 @@ async function submitForm(formData, editToken = null) {
         if (storedRefs.length > 0) {
             console.log(`🚀 Adjuntando ${storedRefs.length} referencias reconstruidas.`);
             storedRefs.forEach(fileObj => {
-                dataToSend.append('referenceFiles', dataURLtoFile(fileObj.data, fileObj.name));
+                const file = dataURLtoFile(fileObj.data, fileObj.name);
+                if (file) dataToSend.append('referenceFiles', file); // 🔥 Agregamos if(file)
             });
         }
 
