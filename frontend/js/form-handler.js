@@ -37,8 +37,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const editToken = urlParams.get('token');
     
+    // Identificar si estamos en Welcome o en las páginas internas
     const isWelcome = !window.location.pathname.includes('page2') && !window.location.pathname.includes('index');
 
+    // 🔥 Limpiar si se borra el token manualmente de la URL
     if (!editToken && localStorage.getItem('editToken')) {
         formManager.clearData();
     }
@@ -58,13 +60,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
+    // Manejador del formulario final (Página 2)
     const formPage2 = document.getElementById('formPage2');
     if (formPage2) {
         formPage2.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (typeof validateManagers === 'function' && !validateManagers()) return;
             
-            // 🔥 CORRECCIÓN: Capturar el nombre actual del span por si se editó en esta página
+            // 🔥 CAPTURA DE NOMBRE: Asegurar que el span editable se guarde antes de enviar
             const companySpan = document.getElementById('companyName');
             if (companySpan) {
                 localStorage.setItem('gameroomName', companySpan.textContent.trim());
@@ -75,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             const allFormData = formManager.getAllData();
             
-            // Re-inyectar datos de identidad
+            // Re-inyectar datos de identidad persistentes
             if (!allFormData.page1) allFormData.page1 = {};
             allFormData.page1.companyName = localStorage.getItem('gameroomName');
             allFormData.page1.logoOption = localStorage.getItem('logoOption');
@@ -83,31 +86,35 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const token = localStorage.getItem('editToken');
             
-            // 🔥 CORRECCIÓN: Pasar el objeto completo de datos recolectados
             await submitForm(allFormData, token);
         });
     }
 });
 
+// FUNCIÓN DE ENVÍO CORREGIDA
 async function submitForm(formData, editToken = null) {
     try {
         const endpoint = editToken ? '/update' : '/submit';
         const dataToSend = new FormData();
         
-        // Adjuntar el JSON
+        // 1. Adjuntar el JSON con toda la información de texto
         const payload = { formData: formData, token: editToken };
         dataToSend.append('data', JSON.stringify(payload));
 
-        // 🔥 CORRECCIÓN: Los archivos se buscan en el DOM de la página ACTUAL
-        // Si el usuario subió logos nuevos, se adjuntan aquí
+        // 2. 🔥 CAPTURA DE ARCHIVOS: Buscar físicamente los archivos en el DOM
+        // Esto es vital para que lleguen a Cloudinary y no como arreglos vacíos
         const logoInput = document.getElementById('logoFiles');
         if (logoInput && logoInput.files.length > 0) {
-            Array.from(logoInput.files).forEach(file => dataToSend.append('logoFiles', file));
+            Array.from(logoInput.files).forEach(file => {
+                dataToSend.append('logoFiles', file);
+            });
         }
 
         const refInput = document.getElementById('referenceFiles');
         if (refInput && refInput.files.length > 0) {
-            Array.from(refInput.files).forEach(file => dataToSend.append('referenceFiles', file));
+            Array.from(refInput.files).forEach(file => {
+                dataToSend.append('referenceFiles', file);
+            });
         }
 
         const response = await fetch(`${API_URL}${endpoint}`, { 
@@ -115,9 +122,8 @@ async function submitForm(formData, editToken = null) {
             body: dataToSend 
         });
 
-        // 🔥 CORRECCIÓN: Verificar si el servidor respondió bien (200) antes de procesar JSON
         if (!response.ok) {
-            throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+            throw new Error(`Error en servidor: ${response.status}`);
         }
 
         const result = await response.json();
@@ -129,7 +135,7 @@ async function submitForm(formData, editToken = null) {
         }
     } catch (error) {
         console.error('❌ Error submitting form:', error);
-        alert('Hubo un problema al enviar el formulario. Verifica tu conexión.');
+        alert('Error al enviar el formulario. Verifica tu conexión.');
     }
 }
 
@@ -162,7 +168,6 @@ function fillFormFields(data) {
     const page2Data = data.page2 || {};
 
     if (isIndex) {
-        // Inyectar el nombre en el span editable con ID "companyName"
         const companySpan = document.getElementById('companyName');
         if (companySpan && page1Data.companyName) {
             companySpan.textContent = page1Data.companyName;

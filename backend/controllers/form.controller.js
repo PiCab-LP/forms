@@ -7,11 +7,14 @@ exports.submitForm = async (req, res) => {
     try {
         console.log('📝 [CONTROLLER] submitForm iniciado');
         
-        let { formData } = req.body;
+        let formData;
+        // 🔥 CORRECCIÓN: Parsing robusto para capturar el JSON dentro del FormData
         if (req.body.data && typeof req.body.data === 'string') {
             const parsedBody = JSON.parse(req.body.data);
             formData = parsedBody.formData;
             console.log('📦 [CONTROLLER] JSON parseado desde FormData');
+        } else {
+            formData = req.body.formData;
         }
 
         // 🖼️ EXTRAER URLS DE CLOUDINARY
@@ -30,7 +33,7 @@ exports.submitForm = async (req, res) => {
             }
         }
 
-        // Inyectar las URLs en el objeto formData
+        // 🔥 CORRECCIÓN: Inyectar las URLs de Cloudinary en el objeto formData
         if (!formData.page1) formData.page1 = {};
         formData.page1.uploadedLogos = uploadedLogos;
         formData.page1.designReferenceImages = designReferenceImages;
@@ -56,7 +59,7 @@ exports.submitForm = async (req, res) => {
             },
             versions: [{
                 versionNumber: 1,
-                formData: formData,
+                formData: JSON.parse(JSON.stringify(formData)), // Copia profunda para historial
                 editedAt: new Date(),
                 ipAddress: ipAddress,
                 userAgent: userAgent,
@@ -70,17 +73,15 @@ exports.submitForm = async (req, res) => {
         const editLink = `${process.env.FRONTEND_URL}/?token=${token}`;
         const managers = formData.page2?.managers || [];
         const companyName = formData.page1?.companyName || 'N/A';
-        
-        // 🔥 ACTUALIZACIÓN: Enviar logoOption y designText al servicio de email
         const { logoOption, designReferenceText } = formData.page1;
 
         emailService.sendEditLinkEmail(email, companyName, editLink, managers, logoOption, designReferenceText)
             .then(() => console.log('✅ Email enviado al usuario:', email))
-            .catch(err => console.error('❌ Error enviando email al usuario:', err));
+            .catch(err => console.error('❌ Error enviando email:', err));
         
         emailService.sendAdminNotification(companyName, email, token, managers, logoOption, designReferenceText)
             .then(() => console.log('✅ Notificación enviada al admin'))
-            .catch(err => console.error('❌ Error enviando notificación al admin:', err));
+            .catch(err => console.error('❌ Error enviando notificación:', err));
         
         res.json({
             success: true,
@@ -107,11 +108,6 @@ exports.getForm = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Formulario no encontrado o expirado' });
         }
         
-        res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-        res.header('Access-Control-Allow-Credentials', 'true');
-        res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-        
         res.json({
             success: true,
             formData: form.formData,
@@ -132,11 +128,14 @@ exports.updateForm = async (req, res) => {
     try {
         console.log('🔄 [CONTROLLER] updateForm iniciado');
         
-        let { token, formData } = req.body;
+        let token, formData;
         if (req.body.data && typeof req.body.data === 'string') {
             const parsedBody = JSON.parse(req.body.data);
             token = parsedBody.token;
             formData = parsedBody.formData;
+        } else {
+            token = req.body.token;
+            formData = req.body.formData;
         }
         
         const ipAddress = req.ip || req.connection.remoteAddress;
@@ -149,21 +148,29 @@ exports.updateForm = async (req, res) => {
 
         const oldFormData = JSON.parse(JSON.stringify(form.formData));
         
-        // 🖼️ PROCESAR IMÁGENES EN UPDATE
+        // 🖼️ 🔥 CORRECCIÓN: PROCESAR IMÁGENES EN UPDATE (Mantener antiguas si no hay nuevas)
+        let currentLogos = form.formData.page1?.uploadedLogos || [];
+        let currentRefs = form.formData.page1?.designReferenceImages || [];
+
         if (req.files) {
-            if (req.files['logoFiles']) {
-                formData.page1.uploadedLogos = req.files['logoFiles'].map(f => f.path);
+            if (req.files['logoFiles'] && req.files['logoFiles'].length > 0) {
+                currentLogos = req.files['logoFiles'].map(f => f.path);
+                console.log('📁 Nuevos logos detectados en update');
             }
-            if (req.files['referenceFiles']) {
-                formData.page1.designReferenceImages = req.files['referenceFiles'].map(f => f.path);
+            if (req.files['referenceFiles'] && req.files['referenceFiles'].length > 0) {
+                currentRefs = req.files['referenceFiles'].map(f => f.path);
+                console.log('📁 Nuevas referencias detectadas en update');
             }
-        } else {
-            formData.page1.uploadedLogos = form.formData.page1?.uploadedLogos || [];
-            formData.page1.designReferenceImages = form.formData.page1?.designReferenceImages || [];
         }
 
+        // 🔥 CORRECCIÓN: Fusión de datos para no perder imágenes anteriores
         const updatedFormData = {
-            page1: { ...form.formData.page1, ...formData.page1 },
+            page1: { 
+                ...form.formData.page1, 
+                ...formData.page1,
+                uploadedLogos: currentLogos,
+                designReferenceImages: currentRefs
+            },
             page2: formData.page2 !== undefined ? formData.page2 : form.formData.page2
         };
         
@@ -172,7 +179,7 @@ exports.updateForm = async (req, res) => {
         
         form.versions.push({
             versionNumber: newVersion,
-            formData: updatedFormData,
+            formData: JSON.parse(JSON.stringify(updatedFormData)),
             editedAt: new Date(),
             ipAddress,
             userAgent,
@@ -189,8 +196,6 @@ exports.updateForm = async (req, res) => {
         
         await form.save();
         console.log('✅ Formulario actualizado exitosamente. Nueva versión:', newVersion);
-
-        // 🔥 Opcional: Podrías reenviar correos de notificación aquí también si los cambios son críticos
         
         res.json({
             success: true,
@@ -206,6 +211,7 @@ exports.updateForm = async (req, res) => {
     }
 };
 
+// Función para detectar cambios entre versiones
 function detectChanges(oldData, newData) {
     const changes = {};
     const page1Fields = ['companyName', 'facebook', 'instagram', 'twitter', 'other', 'logoOption', 'designReferenceText'];
@@ -240,20 +246,23 @@ function detectChanges(oldData, newData) {
         if (oldM && !newM) { changes[`page2.managers[${i}]`] = { old: oldM.fullname, new: '(removed)' }; continue; }
         if (!oldM && newM) { changes[`page2.managers[${i}]`] = { old: '(new)', new: newM.fullname }; continue; }
         
-        ['username', 'fullname', 'role', 'email', 'password'].forEach(f => {
-            const oldV = oldM[f] || '';
-            const newV = newM[f] || '';
-            if (oldV !== newV) {
-                changes[`page2.managers[${i}].${f}`] = {
-                    old: f === 'password' ? '(hidden)' : oldV || '(empty)',
-                    new: f === 'password' ? '(hidden)' : newV || '(empty)'
-                };
-            }
-        });
+        if (oldM && newM) {
+            ['username', 'fullname', 'role', 'email', 'password'].forEach(f => {
+                const oldV = oldM[f] || '';
+                const newV = newM[f] || '';
+                if (oldV !== newV) {
+                    changes[`page2.managers[${i}].${f}`] = {
+                        old: f === 'password' ? '(hidden)' : oldV || '(empty)',
+                        new: f === 'password' ? '(hidden)' : newV || '(empty)'
+                    };
+                }
+            });
+        }
     }
     return changes;
 }
 
+// Historial de cambios
 exports.getFormHistory = async (req, res) => {
     try {
         const { token } = req.params;
