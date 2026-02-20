@@ -1,32 +1,45 @@
-// 🔥 UN SOLO JUEGO DE VARIABLES GLOBALES
-// Usamos window para que el HTML las vea y persistan entre páginas
-window.selectedLogos = [];
-window.selectedReferences = [];
-
-window.handleFiles = function(input, type) {
-    if (type === 'logo') {
-        window.selectedLogos = Array.from(input.files);
-        console.log("✅ Logos retenidos en memoria:", window.selectedLogos.length);
-    } else {
-        window.selectedReferences = Array.from(input.files);
-        console.log("✅ Referencias retenidas en memoria:", window.selectedReferences.length);
-    }
-};
-
-
 // ==========================================
-// 1. CONFIGURACIÓN GLOBAL Y CAPTURA DE ARCHIVOS
+// 1. CONFIGURACIÓN GLOBAL Y CAPTURA DE ARCHIVOS (Base64)
 // ==========================================
 const API_URL = 'https://forms-wliu.onrender.com/api/form';
 
+// 🔥 FUNCIÓN TRADUCTORA: Convierte texto Base64 de vuelta a un Archivo físico
+function dataURLtoFile(dataurl, filename) {
+    let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+    while(n--){
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, {type:mime});
+}
+
+// 🔥 CAPTURA: Lee los archivos, los hace texto y los guarda en LocalStorage
+window.handleFiles = async function(input, type) {
+    const files = Array.from(input.files);
+    
+    // Convertimos los archivos a Base64
+    const base64Files = await Promise.all(files.map(file => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve({ name: file.name, type: file.type, data: e.target.result });
+            reader.readAsDataURL(file);
+        });
+    }));
+
+    if (type === 'logo') {
+        localStorage.setItem('tempLogos', JSON.stringify(base64Files));
+        console.log("✅ Logos guardados en LocalStorage (Sobrevivirán al cambio de página):", base64Files.length);
+    } else {
+        localStorage.setItem('tempReferences', JSON.stringify(base64Files));
+        console.log("✅ Referencias guardadas en LocalStorage:", base64Files.length);
+    }
+};
 
 // ==========================================
 // 2. GESTIÓN DE DATOS (LocalStorage)
 // ==========================================
 class FormDataManager {
-    constructor() {
-        this.storageKey = 'formData';
-    }
+    constructor() { this.storageKey = 'formData'; }
    
     savePageData(page, data) {
         let allData = this.getAllData();
@@ -50,9 +63,8 @@ class FormDataManager {
         localStorage.removeItem('gameroomName');
         localStorage.removeItem('logoOption');
         localStorage.removeItem('designReferenceText');
-        // Limpiamos también las globales al terminar
-        window.selectedLogos = [];
-        window.selectedReferences = [];
+        localStorage.removeItem('tempLogos');
+        localStorage.removeItem('tempReferences');
     }
 }
 
@@ -125,21 +137,31 @@ async function submitForm(formData, editToken = null) {
         const payload = { formData: formData, token: editToken };
         dataToSend.append('data', JSON.stringify(payload));
 
-        console.log("🔍 [SUBMIT] Recuperando archivos de la memoria global...");
+        console.log("🔍 [SUBMIT] Recuperando archivos del LocalStorage y reconstruyéndolos...");
 
-        // 🔥 USAR SIEMPRE LAS VARIABLES DE WINDOW
-        if (window.selectedLogos && window.selectedLogos.length > 0) {
-            window.selectedLogos.forEach(file => dataToSend.append('logoFiles', file));
+        // 🔥 RECONSTRUCCIÓN: Sacamos el texto y lo volvemos archivo
+        const storedLogos = JSON.parse(localStorage.getItem('tempLogos') || '[]');
+        if (storedLogos.length > 0) {
+            console.log(`🚀 Adjuntando ${storedLogos.length} logos reconstruidos.`);
+            storedLogos.forEach(fileObj => {
+                dataToSend.append('logoFiles', dataURLtoFile(fileObj.data, fileObj.name));
+            });
         }
 
-        if (window.selectedReferences && window.selectedReferences.length > 0) {
-            window.selectedReferences.forEach(file => dataToSend.append('referenceFiles', file));
+        const storedRefs = JSON.parse(localStorage.getItem('tempReferences') || '[]');
+        if (storedRefs.length > 0) {
+            console.log(`🚀 Adjuntando ${storedRefs.length} referencias reconstruidas.`);
+            storedRefs.forEach(fileObj => {
+                dataToSend.append('referenceFiles', dataURLtoFile(fileObj.data, fileObj.name));
+            });
         }
 
         const response = await fetch(`${API_URL}${endpoint}`, { 
             method: 'POST', 
             body: dataToSend 
         });
+
+        if (!response.ok) throw new Error(`Error servidor: ${response.status}`);
 
         const result = await response.json();
         if (result.success) {
@@ -149,8 +171,10 @@ async function submitForm(formData, editToken = null) {
         }
     } catch (error) {
         console.error('❌ Error crítico en submitForm:', error);
+        alert('No se pudo enviar el formulario. Revisa tu conexión.');
     }
 }
+
 // ==========================================
 // 5. FUNCIONES AUXILIARES (UI y Carga)
 // ==========================================
