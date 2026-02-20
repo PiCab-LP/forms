@@ -1,6 +1,21 @@
 // Configuración del API
 const API_URL = 'https://forms-wliu.onrender.com/api/form';
 
+// 🔥 NUEVO: Variables globales para retener los archivos físicamente entre páginas
+let selectedLogos = [];
+let selectedReferences = [];
+
+// 🔥 NUEVO: Función para capturar archivos en cuanto se seleccionan (llamar desde el HTML)
+function handleFiles(input, type) {
+    if (type === 'logo') {
+        selectedLogos = Array.from(input.files);
+        console.log("✅ Logos retenidos en memoria:", selectedLogos.length);
+    } else {
+        selectedReferences = Array.from(input.files);
+        console.log("✅ Referencias retenidas en memoria:", selectedReferences.length);
+    }
+}
+
 class FormDataManager {
     constructor() {
         this.storageKey = 'formData';
@@ -28,6 +43,8 @@ class FormDataManager {
         localStorage.removeItem('gameroomName');
         localStorage.removeItem('logoOption');
         localStorage.removeItem('designReferenceText');
+        selectedLogos = [];
+        selectedReferences = [];
     }
 }
 
@@ -91,34 +108,22 @@ async function submitForm(formData, editToken = null) {
         const endpoint = editToken ? '/update' : '/submit';
         const dataToSend = new FormData();
         
-        // 1. Adjuntar el JSON de texto
         const payload = { formData: formData, token: editToken };
         dataToSend.append('data', JSON.stringify(payload));
 
-        // 2. 🔥 CAPTURA DE ARCHIVOS (Modo Infalible)
-        const logoInput = document.getElementById('logoFiles');
-        const refInput = document.getElementById('referenceFiles');
+        console.log("🔍 Preparando envío de archivos desde memoria...");
 
-        // LOGS DE DEPURACIÓN: Revisa esto en tu consola (F12)
-        console.log("🔍 Verificando archivos antes de enviar...");
-
-        if (logoInput && logoInput.files.length > 0) {
-            console.log(`✅ Se encontraron ${logoInput.files.length} logos.`);
-            Array.from(logoInput.files).forEach((file, index) => {
-                dataToSend.append('logoFiles', file); 
-            });
-        } else {
-            console.warn("⚠️ No se seleccionaron logos o el input 'logoFiles' no existe.");
+        // 🔥 CORRECCIÓN: Usamos las variables globales que NO se borran al cambiar de página
+        if (selectedLogos.length > 0) {
+            console.log(`🚀 Adjuntando ${selectedLogos.length} logos al envío.`);
+            selectedLogos.forEach(file => dataToSend.append('logoFiles', file));
         }
 
-        if (refInput && refInput.files.length > 0) {
-            console.log(`✅ Se encontraron ${refInput.files.length} referencias.`);
-            Array.from(refInput.files).forEach((file, index) => {
-                dataToSend.append('referenceFiles', file);
-            });
+        if (selectedReferences.length > 0) {
+            console.log(`🚀 Adjuntando ${selectedReferences.length} referencias al envío.`);
+            selectedReferences.forEach(file => dataToSend.append('referenceFiles', file));
         }
 
-        // 3. ENVÍO (IMPORTANTE: Sin definir headers manualmente)
         const response = await fetch(`${API_URL}${endpoint}`, { 
             method: 'POST', 
             body: dataToSend 
@@ -228,20 +233,18 @@ function getFormDataPage2() {
     return { managers };
 }
 
-// 🔥 CORRECCIÓN: Botón de copiar funcionando y redirección a Thank You
 function showSuccessModal(token, editLink, formData) {
     const modal = document.getElementById('modalConfirmacion');
     const editLinkInput = document.getElementById('editLink');
     const btnCopy = document.getElementById('copyLink');
     const btnClose = document.getElementById('closeModal');
-    const btnDownloadPDF = document.getElementById('downloadPDF'); // 🔥 Capturamos el botón PDF
+    const btnDownloadPDF = document.getElementById('downloadPDF');
 
     if (!modal || !editLinkInput) return;
 
     editLinkInput.value = editLink;
     modal.classList.remove('hidden');
 
-    // 1. Botón de Copiar
     if (btnCopy) {
         btnCopy.addEventListener('click', async () => {
             try {
@@ -256,20 +259,14 @@ function showSuccessModal(token, editLink, formData) {
         });
     }
 
-    // 2. 🔥 CORRECCIÓN: Botón de Descargar PDF
     if (btnDownloadPDF) {
         btnDownloadPDF.addEventListener('click', () => {
-            console.log('📄 Generando PDF con los datos del formulario...');
             if (typeof generatePDF === 'function') {
-                generatePDF(formData); // Llama a tu script de jsPDF
-            } else {
-                console.error('❌ La función generatePDF no está definida.');
-                alert('PDF generation is currently unavailable.');
+                generatePDF(formData);
             }
         });
     }
 
-    // 3. Botón de Cerrar (Redirección a Thank You)
     if (btnClose) {
         btnClose.addEventListener('click', () => {
             formManager.clearData();

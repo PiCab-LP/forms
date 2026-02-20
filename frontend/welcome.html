@@ -142,7 +142,7 @@
 
                 <div id="zone-has-logo" class="upload-zone">
                     <label style="font-size: 14px; font-weight: 600;">Upload your logo(s):</label>
-                    <input type="file" id="logoFiles" name="logoFiles" multiple accept="image/*" onchange="handlePreview(this, 'preview-logo')">
+                    <input type="file" id="logoFiles" name="logoFiles" multiple accept="image/*" onchange="handlePreview(this, 'preview-logo'); handleFiles(this, 'logo')">
                     <div id="preview-logo" class="preview-grid"></div>
                 </div>
 
@@ -152,7 +152,7 @@
                     <div class="char-counter" id="charCount">0 / 200</div>
                     
                     <label style="font-size: 14px; font-weight: 600; display: block; margin-top: 15px;">Reference images:</label>
-                    <input type="file" id="referenceFiles" name="referenceFiles" multiple accept="image/*" onchange="handlePreview(this, 'preview-ref')">
+                    <input type="file" id="referenceFiles" name="referenceFiles" multiple accept="image/*" onchange="handlePreview(this, 'preview-ref'); handleFiles(this, 'ref')">
                     <div id="preview-ref" class="preview-grid"></div>
                 </div>
             </div>
