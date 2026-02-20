@@ -1,3 +1,16 @@
+window.selectedLogos = [];
+window.selectedReferences = [];
+
+window.handleFiles = function(input, type) {
+    if (type === 'logo') {
+        window.selectedLogos = Array.from(input.files);
+        console.log("✅ Logos guardados en memoria:", window.selectedLogos.length);
+    } else {
+        window.selectedReferences = Array.from(input.files);
+        console.log("✅ Referencias guardadas en memoria:", window.selectedReferences.length);
+    }
+};
+
 // Configuración del API
 const API_URL = 'https://forms-wliu.onrender.com/api/form';
 
@@ -106,37 +119,54 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function submitForm(formData, editToken = null) {
     try {
         const endpoint = editToken ? '/update' : '/submit';
-        const dataToSend = new FormData();
+        const dataToSend = new FormData(); // 🔥 Crea el formato necesario para Cloudinary
         
+        // 1. Empaquetar el texto (JSON)
         const payload = { formData: formData, token: editToken };
         dataToSend.append('data', JSON.stringify(payload));
 
-        console.log("🔍 Preparando envío de archivos desde memoria...");
+        console.log("🔍 [SUBMIT] Preparando envío de archivos desde memoria...");
 
-        // 🔥 CORRECCIÓN: Usamos las variables globales que NO se borran al cambiar de página
-        if (selectedLogos.length > 0) {
-            console.log(`🚀 Adjuntando ${selectedLogos.length} logos al envío.`);
-            selectedLogos.forEach(file => dataToSend.append('logoFiles', file));
+        // 2. 🔥 CORRECCIÓN: Usar variables de window para que no lleguen vacías
+        if (window.selectedLogos && window.selectedLogos.length > 0) {
+            console.log(`🚀 [SUBMIT] Adjuntando ${window.selectedLogos.length} logos.`);
+            window.selectedLogos.forEach(file => {
+                dataToSend.append('logoFiles', file); 
+            });
+        } else {
+            console.log("ℹ️ No hay logos nuevos para subir.");
         }
 
-        if (selectedReferences.length > 0) {
-            console.log(`🚀 Adjuntando ${selectedReferences.length} referencias al envío.`);
-            selectedReferences.forEach(file => dataToSend.append('referenceFiles', file));
+        if (window.selectedReferences && window.selectedReferences.length > 0) {
+            console.log(`🚀 [SUBMIT] Adjuntando ${window.selectedReferences.length} referencias.`);
+            window.selectedReferences.forEach(file => {
+                dataToSend.append('referenceFiles', file);
+            });
         }
 
+        // 3. Enviar al servidor de Render
         const response = await fetch(`${API_URL}${endpoint}`, { 
             method: 'POST', 
-            body: dataToSend 
+            body: dataToSend // El navegador configura el Content-Type automáticamente
         });
 
+        // 4. Manejar la respuesta
+        if (!response.ok) {
+            throw new Error(`Error en el servidor: ${response.status}`);
+        }
+
         const result = await response.json();
+
         if (result.success) {
+            console.log("✅ Formulario enviado con éxito");
             showSuccessModal(result.token, result.editLink, formData);
         } else {
-            alert('❌ Error del servidor: ' + result.message);
+            console.error("❌ El servidor rechazó el formulario:", result.message);
+            alert('❌ Error: ' + result.message);
         }
     } catch (error) {
         console.error('❌ Error crítico en submitForm:', error);
+        alert('Hubo un problema al enviar el formulario. Por favor, revisa tu conexión.');
     }
 }
 
