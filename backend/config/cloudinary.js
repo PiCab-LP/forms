@@ -15,6 +15,7 @@ const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'wysaro-forms',
+        upload_preset: 'ml_default', // 🔥 ESTO ES LO QUE ARREGLÓ EL ERROR
         allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'svg'],
     },
 });
