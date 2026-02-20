@@ -1,8 +1,3 @@
-// ==========================================
-// 1. CONFIGURACIÓN GLOBAL Y CAPTURA DE ARCHIVOS
-// ==========================================
-const API_URL = 'https://forms-wliu.onrender.com/api/form';
-
 // 🔥 UN SOLO JUEGO DE VARIABLES GLOBALES
 // Usamos window para que el HTML las vea y persistan entre páginas
 window.selectedLogos = [];
@@ -17,6 +12,13 @@ window.handleFiles = function(input, type) {
         console.log("✅ Referencias retenidas en memoria:", window.selectedReferences.length);
     }
 };
+
+
+// ==========================================
+// 1. CONFIGURACIÓN GLOBAL Y CAPTURA DE ARCHIVOS
+// ==========================================
+const API_URL = 'https://forms-wliu.onrender.com/api/form';
+
 
 // ==========================================
 // 2. GESTIÓN DE DATOS (LocalStorage)
@@ -123,9 +125,9 @@ async function submitForm(formData, editToken = null) {
         const payload = { formData: formData, token: editToken };
         dataToSend.append('data', JSON.stringify(payload));
 
-        console.log("🔍 [SUBMIT] Recuperando archivos de la memoria global de window...");
+        console.log("🔍 [SUBMIT] Recuperando archivos de la memoria global...");
 
-        // 🔥 USAMOS SIEMPRE LAS DE WINDOW
+        // 🔥 USAR SIEMPRE LAS VARIABLES DE WINDOW
         if (window.selectedLogos && window.selectedLogos.length > 0) {
             window.selectedLogos.forEach(file => dataToSend.append('logoFiles', file));
         }
@@ -139,8 +141,6 @@ async function submitForm(formData, editToken = null) {
             body: dataToSend 
         });
 
-        if (!response.ok) throw new Error(`Error servidor: ${response.status}`);
-
         const result = await response.json();
         if (result.success) {
             showSuccessModal(result.token, result.editLink, formData);
@@ -149,10 +149,8 @@ async function submitForm(formData, editToken = null) {
         }
     } catch (error) {
         console.error('❌ Error crítico en submitForm:', error);
-        alert('No se pudo enviar el formulario. Revisa tu conexión.');
     }
 }
-
 // ==========================================
 // 5. FUNCIONES AUXILIARES (UI y Carga)
 // ==========================================
