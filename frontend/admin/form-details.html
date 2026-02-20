@@ -271,6 +271,14 @@
             </div>
 
             <div class="section">
+                <h2>📝 Details Room</h2>
+                <div class="info-item">
+                    <div class="info-label">Rules, Schedules & Bonuses</div>
+                    <div class="info-value" id="roomDetails" style="white-space: pre-wrap; line-height: 1.5;">
+                        </div>
+                </div>
+            </div>
+            <div class="section">
                 <h2>👥 Backend Managers</h2>
                 <div id="managers">
                     </div>
@@ -342,7 +350,7 @@
             document.getElementById('editCount').textContent = form.editCount;
             document.getElementById('currentVersion').textContent = form.currentVersion;
 
-            // --- 🔥 RENDER LOGO IDENTITY ---
+            // --- RENDER LOGO IDENTITY ---
             const logoDiv = document.getElementById('logoIdentitySection');
             const p1 = form.formData?.page1 || {};
             let logoHTML = '';
@@ -394,6 +402,18 @@
                 }
             });
             socialNetworksDiv.innerHTML = socialHTML || '<p style="color: #999;">No social networks provided</p>';
+
+            // 🔥 NUEVO: Renderizar Details Room
+            const roomDetailsValue = p1.roomDetails || '';
+            const roomDetailsContainer = document.getElementById('roomDetails');
+            
+            if (roomDetailsValue.trim() !== '') {
+                // Si hay texto, lo mostramos
+                roomDetailsContainer.textContent = roomDetailsValue;
+            } else {
+                // Si está vacío, mostramos un mensaje sutil
+                roomDetailsContainer.innerHTML = '<span style="color: #999; font-style: italic;">No additional details provided.</span>';
+            }
 
             // Managers
             const managersDiv = document.getElementById('managers');
