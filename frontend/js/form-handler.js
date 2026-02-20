@@ -126,11 +126,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// ==========================================
-// 4. ENVÍO FINAL (Multipart/Form-Data)
+// 4. ENVÍO FINAL (Multipart/Form-Data con Pantalla de Carga)
 // ==========================================
 async function submitForm(formData, editToken = null) {
+    // 🔥 FUNCIONES INTERNAS DE CARGA: Crea una pantalla visual al vuelo
+    function toggleLoading(show) {
+        let overlay = document.getElementById('submit-loading-overlay');
+        if (show) {
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'submit-loading-overlay';
+                // Estilos inyectados directamente para no tener que tocar el CSS
+                overlay.style.cssText = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(255, 255, 255, 0.95);
+                    display: flex; flex-direction: column; align-items: center; justify-content: center;
+                    z-index: 9999; backdrop-filter: blur(5px); transition: opacity 0.3s;
+                `;
+                overlay.innerHTML = `
+                    <div style="width: 60px; height: 60px; border: 6px solid #f0f0f0; border-top: 6px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <h3 style="margin-top: 25px; color: #333; font-family: sans-serif; font-size: 20px;">Processing your files...</h3>
+                    <p style="color: #666; font-family: sans-serif; font-size: 14px; margin-top: 5px;">Please wait a moment, uploading to secure storage.</p>
+                    <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+                `;
+                document.body.appendChild(overlay);
+            }
+            overlay.style.display = 'flex';
+        } else if (overlay) {
+            overlay.style.display = 'none';
+        }
+    }
+
     try {
+        // 🚀 1. ACTIVAMOS LA PANTALLA DE CARGA
+        toggleLoading(true);
+
         const endpoint = editToken ? '/update' : '/submit';
         const dataToSend = new FormData();
         
@@ -139,7 +169,7 @@ async function submitForm(formData, editToken = null) {
 
         console.log("🔍 [SUBMIT] Recuperando archivos del LocalStorage y reconstruyéndolos...");
 
-        // 🔥 RECONSTRUCCIÓN: Sacamos el texto y lo volvemos archivo
+        // RECONSTRUCCIÓN: Sacamos el texto y lo volvemos archivo
         const storedLogos = JSON.parse(localStorage.getItem('tempLogos') || '[]');
         if (storedLogos.length > 0) {
             console.log(`🚀 Adjuntando ${storedLogos.length} logos reconstruidos.`);
@@ -156,6 +186,7 @@ async function submitForm(formData, editToken = null) {
             });
         }
 
+        // ENVÍO AL SERVIDOR
         const response = await fetch(`${API_URL}${endpoint}`, { 
             method: 'POST', 
             body: dataToSend 
@@ -164,12 +195,18 @@ async function submitForm(formData, editToken = null) {
         if (!response.ok) throw new Error(`Error servidor: ${response.status}`);
 
         const result = await response.json();
+        
+        // 🛑 2. DESACTIVAMOS LA PANTALLA DE CARGA CUANDO TERMINA CON ÉXITO
+        toggleLoading(false);
+        
         if (result.success) {
             showSuccessModal(result.token, result.editLink, formData);
         } else {
             alert('❌ Error: ' + result.message);
         }
     } catch (error) {
+        // 🛑 3. DESACTIVAMOS LA PANTALLA DE CARGA SI HAY UN ERROR CRÍTICO
+        toggleLoading(false);
         console.error('❌ Error crítico en submitForm:', error);
         alert('No se pudo enviar el formulario. Revisa tu conexión.');
     }
