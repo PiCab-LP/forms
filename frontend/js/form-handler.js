@@ -9,7 +9,6 @@ class FormDataManager {
     savePageData(page, data) {
         let allData = this.getAllData();
         allData[`page${page}`] = data;
-        console.log(`📦 GUARDANDO page${page} en localStorage:`, data);
         localStorage.setItem(this.storageKey, JSON.stringify(allData));
     }
    
@@ -24,40 +23,30 @@ class FormDataManager {
     }
    
     clearData() {
-        // Limpiamos todo el rastro de la sesión actual
         localStorage.removeItem(this.storageKey);
         localStorage.removeItem('editToken');
         localStorage.removeItem('gameroomName');
         localStorage.removeItem('logoOption');
         localStorage.removeItem('designReferenceText');
-        console.log("🧹 LocalStorage limpiado.");
     }
 }
 
 const formManager = new FormDataManager();
 
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('📄 DOM cargado, inicializando...');
-    
     const urlParams = new URLSearchParams(window.location.search);
     const editToken = urlParams.get('token');
     
     const isWelcome = !window.location.pathname.includes('page2') && !window.location.pathname.includes('index');
-    const isPage2 = window.location.pathname.includes('page2');
 
-    // 🔥 CORRECCIÓN CRÍTICA: Limpieza si se borra el token manualmente de la URL
-    // Si NO hay token en la URL, pero el navegador todavía recuerda uno de una sesión previa, limpiamos.
     if (!editToken && localStorage.getItem('editToken')) {
-        console.log('🧹 Limpieza de seguridad: Se detectó rastro de edición sin token activo en URL.');
         formManager.clearData();
     }
 
     if (editToken) {
-        // Solo limpiar si entramos con un token NUEVO o distinto al actual para evitar mezclas
         if (isWelcome && localStorage.getItem('editToken') !== editToken) {
             formManager.clearData();
         }
-        
         localStorage.setItem('editToken', editToken);
         
         if (isWelcome) {
@@ -75,16 +64,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             e.preventDefault();
             if (typeof validateManagers === 'function' && !validateManagers()) return;
             
+            // 🔥 CORRECCIÓN: Capturar el nombre actual del span por si se editó en esta página
+            const companySpan = document.getElementById('companyName');
+            if (companySpan) {
+                localStorage.setItem('gameroomName', companySpan.textContent.trim());
+            }
+
             const page2Data = getFormDataPage2();
             formManager.savePageData(2, page2Data);
+            
             const allFormData = formManager.getAllData();
             
+            // Re-inyectar datos de identidad
             if (!allFormData.page1) allFormData.page1 = {};
             allFormData.page1.companyName = localStorage.getItem('gameroomName');
             allFormData.page1.logoOption = localStorage.getItem('logoOption');
             allFormData.page1.designReferenceText = localStorage.getItem('designReferenceText');
 
             const token = localStorage.getItem('editToken');
+            
+            // 🔥 CORRECCIÓN: Pasar el objeto completo de datos recolectados
             await submitForm(allFormData, token);
         });
     }
@@ -94,20 +93,33 @@ async function submitForm(formData, editToken = null) {
     try {
         const endpoint = editToken ? '/update' : '/submit';
         const dataToSend = new FormData();
+        
+        // Adjuntar el JSON
         const payload = { formData: formData, token: editToken };
         dataToSend.append('data', JSON.stringify(payload));
 
+        // 🔥 CORRECCIÓN: Los archivos se buscan en el DOM de la página ACTUAL
+        // Si el usuario subió logos nuevos, se adjuntan aquí
         const logoInput = document.getElementById('logoFiles');
         if (logoInput && logoInput.files.length > 0) {
-            Array.from(logoInput.files).slice(0, 3).forEach(file => dataToSend.append('logoFiles', file));
+            Array.from(logoInput.files).forEach(file => dataToSend.append('logoFiles', file));
         }
 
         const refInput = document.getElementById('referenceFiles');
         if (refInput && refInput.files.length > 0) {
-            Array.from(refInput.files).slice(0, 5).forEach(file => dataToSend.append('referenceFiles', file));
+            Array.from(refInput.files).forEach(file => dataToSend.append('referenceFiles', file));
         }
 
-        const response = await fetch(`${API_URL}${endpoint}`, { method: 'POST', body: dataToSend });
+        const response = await fetch(`${API_URL}${endpoint}`, { 
+            method: 'POST', 
+            body: dataToSend 
+        });
+
+        // 🔥 CORRECCIÓN: Verificar si el servidor respondió bien (200) antes de procesar JSON
+        if (!response.ok) {
+            throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+        }
+
         const result = await response.json();
 
         if (result.success) {
@@ -117,6 +129,7 @@ async function submitForm(formData, editToken = null) {
         }
     } catch (error) {
         console.error('❌ Error submitting form:', error);
+        alert('Hubo un problema al enviar el formulario. Verifica tu conexión.');
     }
 }
 
