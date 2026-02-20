@@ -1,8 +1,13 @@
-// Definimos las variables en el objeto 'window' para que sean globales y eternas
+// ==========================================
+// 1. CONFIGURACIÓN GLOBAL Y CAPTURA DE ARCHIVOS
+// ==========================================
+const API_URL = 'https://forms-wliu.onrender.com/api/form';
+
+// 🔥 UN SOLO JUEGO DE VARIABLES GLOBALES
+// Usamos window para que el HTML las vea y persistan entre páginas
 window.selectedLogos = [];
 window.selectedReferences = [];
 
-// Definimos la función también en 'window' para que el HTML la encuentre siempre
 window.handleFiles = function(input, type) {
     if (type === 'logo') {
         window.selectedLogos = Array.from(input.files);
@@ -13,24 +18,9 @@ window.handleFiles = function(input, type) {
     }
 };
 
-// Configuración del API
-const API_URL = 'https://forms-wliu.onrender.com/api/form';
-
-// 🔥 NUEVO: Variables globales para retener los archivos físicamente entre páginas
-let selectedLogos = [];
-let selectedReferences = [];
-
-// 🔥 NUEVO: Función para capturar archivos en cuanto se seleccionan (llamar desde el HTML)
-function handleFiles(input, type) {
-    if (type === 'logo') {
-        selectedLogos = Array.from(input.files);
-        console.log("✅ Logos retenidos en memoria:", selectedLogos.length);
-    } else {
-        selectedReferences = Array.from(input.files);
-        console.log("✅ Referencias retenidas en memoria:", selectedReferences.length);
-    }
-}
-
+// ==========================================
+// 2. GESTIÓN DE DATOS (LocalStorage)
+// ==========================================
 class FormDataManager {
     constructor() {
         this.storageKey = 'formData';
@@ -58,13 +48,17 @@ class FormDataManager {
         localStorage.removeItem('gameroomName');
         localStorage.removeItem('logoOption');
         localStorage.removeItem('designReferenceText');
-        selectedLogos = [];
-        selectedReferences = [];
+        // Limpiamos también las globales al terminar
+        window.selectedLogos = [];
+        window.selectedReferences = [];
     }
 }
 
 const formManager = new FormDataManager();
 
+// ==========================================
+// 3. INICIALIZACIÓN Y EVENTOS
+// ==========================================
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const editToken = urlParams.get('token');
@@ -118,34 +112,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// ==========================================
+// 4. ENVÍO FINAL (Multipart/Form-Data)
+// ==========================================
 async function submitForm(formData, editToken = null) {
     try {
         const endpoint = editToken ? '/update' : '/submit';
         const dataToSend = new FormData();
         
-        // 1. Empaquetar el JSON de texto
         const payload = { formData: formData, token: editToken };
         dataToSend.append('data', JSON.stringify(payload));
 
-        console.log("🔍 [SUBMIT] Preparando envío de archivos desde la memoria global...");
+        console.log("🔍 [SUBMIT] Recuperando archivos de la memoria global de window...");
 
-        // 2. 🔥 USAR LAS VARIABLES GLOBALES DE WINDOW
-        // Esto evita que al cambiar de página los archivos se pierdan
+        // 🔥 USAMOS SIEMPRE LAS DE WINDOW
         if (window.selectedLogos && window.selectedLogos.length > 0) {
-            console.log(`🚀 Adjuntando ${window.selectedLogos.length} logos.`);
-            window.selectedLogos.forEach(file => {
-                dataToSend.append('logoFiles', file); 
-            });
+            window.selectedLogos.forEach(file => dataToSend.append('logoFiles', file));
         }
 
         if (window.selectedReferences && window.selectedReferences.length > 0) {
-            console.log(`🚀 Adjuntando ${window.selectedReferences.length} referencias.`);
-            window.selectedReferences.forEach(file => {
-                dataToSend.append('referenceFiles', file);
-            });
+            window.selectedReferences.forEach(file => dataToSend.append('referenceFiles', file));
         }
 
-        // 3. Envío al servidor
         const response = await fetch(`${API_URL}${endpoint}`, { 
             method: 'POST', 
             body: dataToSend 
@@ -165,11 +153,13 @@ async function submitForm(formData, editToken = null) {
     }
 }
 
+// ==========================================
+// 5. FUNCIONES AUXILIARES (UI y Carga)
+// ==========================================
 async function loadExistingFormData(token) {
     try {
         const response = await fetch(`${API_URL}/get/${token}`);
         const data = await response.json();
-        
         if (data.success) {
             localStorage.setItem('formData', JSON.stringify(data.formData));
             if (data.formData.page1) {
@@ -180,9 +170,7 @@ async function loadExistingFormData(token) {
             fillFormFields(data.formData);
             showEditMode();
         }
-    } catch (error) {
-        console.error('❌ Error cargando datos:', error);
-    }
+    } catch (error) { console.error('❌ Error cargando datos:', error); }
 }
 
 function fillFormFields(data) {
@@ -284,12 +272,8 @@ function showSuccessModal(token, editLink, formData) {
         });
     }
 
-    if (btnDownloadPDF) {
-        btnDownloadPDF.addEventListener('click', () => {
-            if (typeof generatePDF === 'function') {
-                generatePDF(formData);
-            }
-        });
+    if (btnDownloadPDF && typeof generatePDF === 'function') {
+        btnDownloadPDF.addEventListener('click', () => generatePDF(formData));
     }
 
     if (btnClose) {
