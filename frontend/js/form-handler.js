@@ -1,13 +1,15 @@
+// Definimos las variables en el objeto 'window' para que sean globales y eternas
 window.selectedLogos = [];
 window.selectedReferences = [];
 
+// Definimos la función también en 'window' para que el HTML la encuentre siempre
 window.handleFiles = function(input, type) {
     if (type === 'logo') {
         window.selectedLogos = Array.from(input.files);
-        console.log("✅ Logos guardados en memoria:", window.selectedLogos.length);
+        console.log("✅ Logos retenidos en memoria:", window.selectedLogos.length);
     } else {
         window.selectedReferences = Array.from(input.files);
-        console.log("✅ Referencias guardadas en memoria:", window.selectedReferences.length);
+        console.log("✅ Referencias retenidas en memoria:", window.selectedReferences.length);
     }
 };
 
@@ -119,54 +121,47 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function submitForm(formData, editToken = null) {
     try {
         const endpoint = editToken ? '/update' : '/submit';
-        const dataToSend = new FormData(); // 🔥 Crea el formato necesario para Cloudinary
+        const dataToSend = new FormData();
         
-        // 1. Empaquetar el texto (JSON)
+        // 1. Empaquetar el JSON de texto
         const payload = { formData: formData, token: editToken };
         dataToSend.append('data', JSON.stringify(payload));
 
-        console.log("🔍 [SUBMIT] Preparando envío de archivos desde memoria...");
+        console.log("🔍 [SUBMIT] Preparando envío de archivos desde la memoria global...");
 
-        // 2. 🔥 CORRECCIÓN: Usar variables de window para que no lleguen vacías
+        // 2. 🔥 USAR LAS VARIABLES GLOBALES DE WINDOW
+        // Esto evita que al cambiar de página los archivos se pierdan
         if (window.selectedLogos && window.selectedLogos.length > 0) {
-            console.log(`🚀 [SUBMIT] Adjuntando ${window.selectedLogos.length} logos.`);
+            console.log(`🚀 Adjuntando ${window.selectedLogos.length} logos.`);
             window.selectedLogos.forEach(file => {
                 dataToSend.append('logoFiles', file); 
             });
-        } else {
-            console.log("ℹ️ No hay logos nuevos para subir.");
         }
 
         if (window.selectedReferences && window.selectedReferences.length > 0) {
-            console.log(`🚀 [SUBMIT] Adjuntando ${window.selectedReferences.length} referencias.`);
+            console.log(`🚀 Adjuntando ${window.selectedReferences.length} referencias.`);
             window.selectedReferences.forEach(file => {
                 dataToSend.append('referenceFiles', file);
             });
         }
 
-        // 3. Enviar al servidor de Render
+        // 3. Envío al servidor
         const response = await fetch(`${API_URL}${endpoint}`, { 
             method: 'POST', 
-            body: dataToSend // El navegador configura el Content-Type automáticamente
+            body: dataToSend 
         });
 
-        // 4. Manejar la respuesta
-        if (!response.ok) {
-            throw new Error(`Error en el servidor: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Error servidor: ${response.status}`);
 
         const result = await response.json();
-
         if (result.success) {
-            console.log("✅ Formulario enviado con éxito");
             showSuccessModal(result.token, result.editLink, formData);
         } else {
-            console.error("❌ El servidor rechazó el formulario:", result.message);
             alert('❌ Error: ' + result.message);
         }
     } catch (error) {
         console.error('❌ Error crítico en submitForm:', error);
-        alert('Hubo un problema al enviar el formulario. Por favor, revisa tu conexión.');
+        alert('No se pudo enviar el formulario. Revisa tu conexión.');
     }
 }
 
