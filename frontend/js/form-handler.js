@@ -229,12 +229,14 @@ function showSuccessModal(token, editLink, formData) {
     const editLinkInput = document.getElementById('editLink');
     const btnCopy = document.getElementById('copyLink');
     const btnClose = document.getElementById('closeModal');
+    const btnDownloadPDF = document.getElementById('downloadPDF'); // 🔥 Capturamos el botón PDF
 
     if (!modal || !editLinkInput) return;
 
     editLinkInput.value = editLink;
     modal.classList.remove('hidden');
 
+    // 1. Botón de Copiar
     if (btnCopy) {
         btnCopy.addEventListener('click', async () => {
             try {
@@ -249,10 +251,23 @@ function showSuccessModal(token, editLink, formData) {
         });
     }
 
+    // 2. 🔥 CORRECCIÓN: Botón de Descargar PDF
+    if (btnDownloadPDF) {
+        btnDownloadPDF.addEventListener('click', () => {
+            console.log('📄 Generando PDF con los datos del formulario...');
+            if (typeof generatePDF === 'function') {
+                generatePDF(formData); // Llama a tu script de jsPDF
+            } else {
+                console.error('❌ La función generatePDF no está definida.');
+                alert('PDF generation is currently unavailable.');
+            }
+        });
+    }
+
+    // 3. Botón de Cerrar (Redirección a Thank You)
     if (btnClose) {
         btnClose.addEventListener('click', () => {
             formManager.clearData();
-            // Cambiamos 'welcome.html' por 'thank-you.html'
             window.location.href = 'thank-you.html'; 
         });
     }
