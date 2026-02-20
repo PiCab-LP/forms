@@ -5,81 +5,77 @@ if (document.getElementById('btnNext')) {
     document.getElementById('btnNext').addEventListener('click', () => {
         console.log('🖱️ ===== CLICK EN NEXT - INICIANDO CAPTURA =====');
         
-        // Validar que al menos una red social esté llena
+        // 1. Validar que al menos una red social esté llena
         if (!validateSocialNetworks()) {
             console.log('❌ Validación de redes sociales falló');
             return;
         }
+
+        // 2. 🔥 VALIDACIONES DE ROOM DETAILS (TODOS OBLIGATORIOS)
+        const cashoutLimit = document.getElementById('cashoutLimit').value;
+        const minDeposit = document.getElementById('minDeposit').value;
+        const scheduleOption = document.querySelector('input[name="scheduleOption"]:checked')?.value;
+        const customSchedule = document.getElementById('customSchedule').value.trim();
+        const telegramPhone = document.getElementById('telegramPhone').value.trim();
+
+        // Validar que los montos no estén vacíos
+        if (!cashoutLimit || !minDeposit) {
+            alert("⚠️ Please enter both Cashout Limit and Minimum Deposit.");
+            return;
+        }
+
+        // Validar que se haya seleccionado una opción de horario
+        if (!scheduleOption) {
+            alert("⚠️ Please select a cashout schedule option (24/7 or Specific).");
+            return;
+        }
+
+        // Si eligió horario específico, validar que escribiera el rango
+        if (scheduleOption === 'custom' && !customSchedule) {
+            alert("⚠️ Please describe your specific schedule (e.g., 14:00 to 21:00).");
+            return;
+        }
+
+        // Validación estricta de 10 dígitos para USA
+        if (telegramPhone.length !== 10) {
+            alert("⚠️ Please enter a valid 10-digit USA phone number for Telegram.");
+            return;
+        }
         
-        console.log('✅ Validación de redes sociales pasó');
+        console.log('✅ Todas las validaciones pasaron');
         
-        // Capturar el nombre de la compañía (puede ser editado o el del localStorage)
+        // Capturar el nombre de la compañía
         let companyName = document.getElementById('companyName').textContent.trim();
-        
-        // Si está vacío o es el placeholder, usar el del localStorage
         if (!companyName || companyName === 'Company Name') {
             companyName = localStorage.getItem('gameroomName') || 'Company Name';
         }
         
-        console.log('🏢 Company Name:', companyName);
-        
-        // Actualizar localStorage con el nombre final
         localStorage.setItem('gameroomName', companyName);
         
-        // 🔥 CAPTURAR VALORES ACTUALES DEL DOM
-        const facebookEl = document.getElementById('facebook');
-        const instagramEl = document.getElementById('instagram');
-        const twitterEl = document.getElementById('twitter');
-        const otherEl = document.getElementById('other');
-        const roomDetailsEl = document.getElementById('roomDetails'); // 🔥 NUEVO
-        
-        console.log('🔍 VERIFICANDO EXISTENCIA DE ELEMENTOS:');
-        console.log('  facebookEl existe:', !!facebookEl);
-        console.log('  instagramEl existe:', !!instagramEl);
-        console.log('  twitterEl existe:', !!twitterEl);
-        console.log('  otherEl existe:', !!otherEl);
-        console.log('  roomDetailsEl existe:', !!roomDetailsEl);
-        
-        console.log('🔍 VALORES CRUDOS EN EL DOM (sin trim):');
-        console.log('  Facebook valor:', facebookEl ? `"${facebookEl.value}"` : 'NO ENCONTRADO');
-        console.log('  Instagram valor:', instagramEl ? `"${instagramEl.value}"` : 'NO ENCONTRADO');
-        console.log('  Twitter valor:', twitterEl ? `"${twitterEl.value}"` : 'NO ENCONTRADO');
-        console.log('  Other valor:', otherEl ? `"${otherEl.value}"` : 'NO ENCONTRADO');
-        console.log('  Room Details valor:', roomDetailsEl ? `"${roomDetailsEl.value}"` : 'NO ENCONTRADO');
-        
+        // 3. CAPTURA DE DATOS FINAL (Incluyendo los 5 nuevos campos)
         const page1Data = {
             companyName: companyName,
-            facebook: facebookEl ? facebookEl.value.trim() : '',
-            instagram: instagramEl ? instagramEl.value.trim() : '',
-            twitter: twitterEl ? twitterEl.value.trim() : '',
-            other: otherEl ? otherEl.value.trim() : '',
-            roomDetails: roomDetailsEl ? roomDetailsEl.value.trim() : '' // 🔥 NUEVO: Añadido al objeto
+            facebook: document.getElementById('facebook').value.trim(),
+            instagram: document.getElementById('instagram').value.trim(),
+            twitter: document.getElementById('twitter').value.trim(),
+            other: document.getElementById('other').value.trim(),
+            // Datos del bloque Room Details
+            cashoutLimit: cashoutLimit,
+            minDeposit: minDeposit,
+            scheduleOption: scheduleOption,
+            customSchedule: scheduleOption === 'custom' ? customSchedule : '24/7',
+            telegramPhone: telegramPhone
         };
-        
-        console.log('🔍 DATOS CAPTURADOS DESPUÉS DE TRIM:');
-        console.log('  Facebook:', page1Data.facebook || '[VACÍO]');
-        console.log('  Instagram:', page1Data.instagram || '[VACÍO]');
-        console.log('  Twitter:', page1Data.twitter || '[VACÍO]');
-        console.log('  Other:', page1Data.other || '[VACÍO]');
-        console.log('  Room Details:', page1Data.roomDetails || '[VACÍO]');
         
         console.log('📦 OBJETO COMPLETO page1Data:', JSON.stringify(page1Data, null, 2));
         
         formManager.savePageData(1, page1Data);
         
-        console.log('✅ Datos guardados en localStorage');
-        console.log('📂 Verificando guardado:', JSON.parse(localStorage.getItem('formData')));
-        
         // Ir a página 2
         const editToken = localStorage.getItem('editToken');
-        const nextPage = editToken 
-            ? `page2?token=${editToken}` 
-            : 'page2';
+        const nextPage = editToken ? `page2?token=${editToken}` : 'page2';
         
         console.log('🚀 Navegando a:', nextPage);
-        console.log('🔑 Edit token:', editToken || '[NO HAY TOKEN]');
-        console.log('🖱️ ===== FIN DE CAPTURA - NAVEGANDO =====');
-        
         window.location.href = nextPage;
     });
 }
@@ -87,17 +83,12 @@ if (document.getElementById('btnNext')) {
 // Botón "Back" en página 2
 if (document.getElementById('btnBack')) {
     document.getElementById('btnBack').addEventListener('click', () => {
-        console.log('⬅️ Click en Back');
-        
         // Guardar datos actuales de página 2 antes de retroceder
         const page2Data = getFormDataPage2();
         formManager.savePageData(2, page2Data);
         
-        // Volver a página 1
         const editToken = localStorage.getItem('editToken');
-        const prevPage = editToken 
-            ? `/?token=${editToken}` 
-            : '/';
+        const prevPage = editToken ? `/?token=${editToken}` : '/';
         window.location.href = prevPage;
     });
 }
@@ -109,141 +100,94 @@ function getFormDataPage2() {
     
     managerBlocks.forEach((block, index) => {
         const managerNum = index + 1;
-        
-        const manager = {
+        managers.push({
             username: document.getElementById(`username_${managerNum}`).value.trim(),
             fullname: document.getElementById(`fullname_${managerNum}`).value.trim(),
             role: document.getElementById(`role_${managerNum}`).value,
             email: document.getElementById(`email_${managerNum}`).value.trim(),
             password: document.getElementById(`password_${managerNum}`).value
-        };
-        
-        managers.push(manager);
+        });
     });
-    
     return { managers };
 }
 
 // Cargar datos guardados al cargar la página
 window.addEventListener('DOMContentLoaded', () => {
-    console.log('📄 DOMContentLoaded - Iniciando carga de página');
-    
     const currentPage = window.location.pathname.includes('page2') ? 2 : 1;
-    console.log('📍 Página actual:', currentPage === 1 ? 'page1' : 'page2');
-    
-    // 🔥 IMPORTANTE: Verificar si hay token en URL (modo edición)
     const urlParams = new URLSearchParams(window.location.search);
     const hasEditToken = urlParams.get('token');
     
-    console.log('🔑 Token en URL:', hasEditToken || '[NO HAY TOKEN]');
-    
     if (currentPage === 1) {
-        // 🔥 Si hay token, esperar un momento para que form-handler.js cargue los datos
-        if (hasEditToken) {
-            console.log('⏭️ Modo edición detectado');
-            console.log('✅ form-handler.js se encarga de cargar y llenar los datos del servidor');
-            return;
-        }
+        if (hasEditToken) return; // form-handler.js maneja la edición
         
-        console.log('📂 Cargando datos desde localStorage (nuevo formulario)');
-        
-        // Cargar datos de página 1 - Solo si NO estamos en modo edición
         const savedData = formManager.loadPageData(1);
         
-        console.log('📊 Datos cargados desde localStorage:', savedData);
-        
+        // Cargar nombre y redes
         const companyNameEl = document.getElementById('companyName');
-        if (companyNameEl && savedData.companyName) {
-            companyNameEl.textContent = savedData.companyName;
-            console.log('✅ Company name cargado:', savedData.companyName);
-        }
+        if (companyNameEl && savedData.companyName) companyNameEl.textContent = savedData.companyName;
         
-        // Cargar campos de redes sociales, incluso si están vacíos
-        const facebookEl = document.getElementById('facebook');
-        if (facebookEl) {
-            facebookEl.value = savedData.facebook || '';
-            console.log('✅ Facebook cargado:', savedData.facebook || '[VACÍO]');
-        }
-        
-        const instagramEl = document.getElementById('instagram');
-        if (instagramEl) {
-            instagramEl.value = savedData.instagram || '';
-            console.log('✅ Instagram cargado:', savedData.instagram || '[VACÍO]');
-        }
-        
-        const twitterEl = document.getElementById('twitter');
-        if (twitterEl) {
-            twitterEl.value = savedData.twitter || '';
-            console.log('✅ Twitter cargado:', savedData.twitter || '[VACÍO]');
-        }
-        
-        const otherEl = document.getElementById('other');
-        if (otherEl) {
-            otherEl.value = savedData.other || '';
-            console.log('✅ Other cargado:', savedData.other || '[VACÍO]');
-        }
+        if (document.getElementById('facebook')) document.getElementById('facebook').value = savedData.facebook || '';
+        if (document.getElementById('instagram')) document.getElementById('instagram').value = savedData.instagram || '';
+        if (document.getElementById('twitter')) document.getElementById('twitter').value = savedData.twitter || '';
+        if (document.getElementById('other')) document.getElementById('other').value = savedData.other || '';
 
-        // 🔥 NUEVO: Cargar el campo de Details Room
-        const roomDetailsEl = document.getElementById('roomDetails');
-        if (roomDetailsEl) {
-            roomDetailsEl.value = savedData.roomDetails || '';
-            console.log('✅ Room Details cargado:', savedData.roomDetails || '[VACÍO]');
+        // 🔥 CARGAR NUEVOS CAMPOS DE ROOM DETAILS (Auto-rellenado)
+        if (savedData.cashoutLimit) document.getElementById('cashoutLimit').value = savedData.cashoutLimit;
+        if (savedData.minDeposit) document.getElementById('minDeposit').value = savedData.minDeposit;
+        
+        if (savedData.telegramPhone) {
+            document.getElementById('telegramPhone').value = savedData.telegramPhone;
+            const countEl = document.getElementById('phoneCount');
+            if (countEl) countEl.textContent = savedData.telegramPhone.length;
+        }
+        
+        if (savedData.scheduleOption) {
+            const radio = document.querySelector(`input[name="scheduleOption"][value="${savedData.scheduleOption}"]`);
+            if (radio) {
+                radio.checked = true;
+                if (savedData.scheduleOption === 'custom') {
+                    const rangeDiv = document.getElementById('scheduleTimeRange');
+                    if (rangeDiv) rangeDiv.style.display = 'block';
+                    const customInput = document.getElementById('customSchedule');
+                    if (customInput) customInput.value = savedData.customSchedule || '';
+                }
+            }
         }
     }
     
     if (currentPage === 2) {
-        console.log('📋 Estamos en page2, cargando managers');
-        
-        // Cargar datos de página 2 si existen
         const savedData = formManager.loadPageData(2);
-        
-        console.log('📊 Datos de page2 desde localStorage:', savedData);
-        
         if (savedData.managers && savedData.managers.length > 0) {
-            console.log('👥 Cargando', savedData.managers.length, 'manager(s)');
-            
-            // Si hay managers guardados, cargarlos
             const container = document.getElementById('managersContainer');
-            container.innerHTML = '';
-            
-            savedData.managers.forEach((manager, index) => {
-                addManagerBlock(index + 1, manager);
-            });
-            
+            if (container) {
+                container.innerHTML = '';
+                savedData.managers.forEach((manager, index) => {
+                    addManagerBlock(index + 1, manager);
+                });
+            }
             updateAddManagerButton();
-        } else {
-            console.log('ℹ️ No hay managers guardados en localStorage');
         }
-        
-        // Configurar botón para agregar managers
         setupAddManagerButton();
     }
-    
-    console.log('✅ DOMContentLoaded completado');
 });
 
-// Configurar funcionalidad de agregar managers
+// --- FUNCIONES DE MANAGERS ---
+
 function setupAddManagerButton() {
     const btnAddManager = document.getElementById('btnAddManager');
-    
     if (btnAddManager) {
         btnAddManager.addEventListener('click', () => {
             const currentManagers = document.querySelectorAll('.manager-block').length;
-            
-            if (currentManagers >= 5) {
-                alert('Maximum 5 managers allowed');
-                return;
-            }
-            
+            if (currentManagers >= 5) return alert('Maximum 5 managers allowed');
             addManagerBlock(currentManagers + 1);
             updateAddManagerButton();
         });
     }
 }
 
-// Agregar bloque de manager
 function addManagerBlock(managerNum, data = null) {
     const container = document.getElementById('managersContainer');
+    if (!container) return;
     
     const managerBlock = document.createElement('div');
     managerBlock.className = 'manager-block';
@@ -286,71 +230,38 @@ function addManagerBlock(managerNum, data = null) {
                     👁️
                 </button>
             </div>
-            <small class="input-help">Min. 8 characters, 1 number, 1 special character</small>
         </div>
     `;
-    
     container.appendChild(managerBlock);
 }
 
-// Remover manager
 function removeManager(button) {
-    const managerBlock = button.closest('.manager-block');
-    managerBlock.remove();
-    
-    // Renumerar managers
+    button.closest('.manager-block').remove();
     const managers = document.querySelectorAll('.manager-block');
     managers.forEach((block, index) => {
         const newNum = index + 1;
         block.setAttribute('data-manager', newNum);
         block.querySelector('h3').textContent = `Manager #${newNum}`;
-        
-        // Actualizar IDs y names
-        const inputs = block.querySelectorAll('input, select');
-        inputs.forEach(input => {
+        block.querySelectorAll('input, select').forEach(input => {
             const baseName = input.id.split('_')[0];
             input.id = `${baseName}_${newNum}`;
             input.name = `${baseName}_${newNum}`;
         });
-        
-        // Actualizar labels
-        const labels = block.querySelectorAll('label');
-        labels.forEach(label => {
-            const forAttr = label.getAttribute('for');
-            if (forAttr) {
-                const baseName = forAttr.split('_')[0];
-                label.setAttribute('for', `${baseName}_${newNum}`);
-            }
-        });
     });
-    
     updateAddManagerButton();
 }
 
-// Actualizar estado del botón de agregar managers
 function updateAddManagerButton() {
     const btnAddManager = document.getElementById('btnAddManager');
-    const currentManagers = document.querySelectorAll('.manager-block').length;
-    
-    if (currentManagers >= 5) {
-        btnAddManager.disabled = true;
-        btnAddManager.textContent = '✓ Maximum managers reached (5)';
-    } else {
-        btnAddManager.disabled = false;
-        btnAddManager.textContent = '+ I want another backend account';
-    }
+    if (!btnAddManager) return;
+    const count = document.querySelectorAll('.manager-block').length;
+    btnAddManager.disabled = count >= 5;
+    btnAddManager.textContent = count >= 5 ? '✓ Maximum reached' : '+ I want another backend account';
 }
 
-// Mostrar/ocultar password
-function togglePassword(managerNum) {
-    const passwordInput = document.getElementById(`password_${managerNum}`);
-    const toggleBtn = passwordInput.nextElementSibling;
-    
-    if (passwordInput.type === 'password') {
-        passwordInput.type = 'text';
-        toggleBtn.textContent = '🙈';
-    } else {
-        passwordInput.type = 'password';
-        toggleBtn.textContent = '👁️';
+function togglePassword(num) {
+    const input = document.getElementById(`password_${num}`);
+    if (input) {
+        input.type = input.type === 'password' ? 'text' : 'password';
     }
 }

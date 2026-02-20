@@ -7,8 +7,6 @@ const API_URL = 'https://forms-wliu.onrender.com/api/form';
 function dataURLtoFile(dataurl, filename) {
     try {
         let arr = dataurl.split(',');
-        
-        // Extraemos el tipo de archivo. Si el iPhone lo manda vacío, forzamos que sea un JPEG por seguridad
         let mimeMatch = arr[0].match(/:(.*?);/);
         let mime = (mimeMatch && mimeMatch[1]) ? mimeMatch[1] : 'image/jpeg';
         
@@ -19,7 +17,6 @@ function dataURLtoFile(dataurl, filename) {
             u8arr[n] = bstr.charCodeAt(n);
         }
         
-        // Si el iPhone manda la foto sin extensión en el nombre, se la ponemos
         let finalName = filename;
         if (!finalName.includes('.')) {
             finalName += mime === 'image/png' ? '.png' : '.jpg';
@@ -28,7 +25,7 @@ function dataURLtoFile(dataurl, filename) {
         return new File([u8arr], finalName, {type: mime});
     } catch (error) {
         console.error("❌ Error convirtiendo imagen del iPhone:", error);
-        return null; // Si falla, devolvemos nulo para no romper el resto del formulario
+        return null;
     }
 }
 
@@ -39,25 +36,19 @@ window.handleFiles = async function(input, type) {
     const base64Files = await Promise.all(files.map(file => {
         return new Promise((resolve) => {
             const reader = new FileReader();
-            
             reader.onload = (e) => {
-                // iPhone Fix: Si no trae tipo o nombre válido, lo generamos
                 let fileType = file.type || (file.name.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
                 let fileName = file.name || `iphone_upload_${Date.now()}.jpg`;
-                
                 resolve({ name: fileName, type: fileType, data: e.target.result });
             };
-            
             reader.onerror = () => {
                 console.error("❌ Error de lectura en Safari/iOS");
-                resolve(null); // Evita que se cuelgue si el iPhone no deja leer la foto
+                resolve(null);
             };
-            
             reader.readAsDataURL(file);
         });
     }));
 
-    // Filtramos cualquier imagen que el iPhone haya bloqueado o dañado
     const validFiles = base64Files.filter(f => f !== null);
 
     if (type === 'logo') {
@@ -149,12 +140,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             const allFormData = formManager.getAllData();
             
             if (!allFormData.page1) allFormData.page1 = {};
-            allFormData.page1.companyName = localStorage.getItem('gameroomName');
-            allFormData.page1.logoOption = localStorage.getItem('logoOption');
-            allFormData.page1.designReferenceText = localStorage.getItem('designReferenceText');
+            
+            // 🔥 ASEGURAR QUE SE INCLUYAN TODOS LOS CAMPOS DE LA PÁGINA 1
+            const p1 = allFormData.page1;
+            const savedP1 = formManager.loadPageData(1);
+            
+            p1.companyName = localStorage.getItem('gameroomName');
+            p1.logoOption = localStorage.getItem('logoOption');
+            p1.designReferenceText = localStorage.getItem('designReferenceText');
+            
+            // Nuevos campos obligatorios de Room Details
+            p1.cashoutLimit = savedP1.cashoutLimit;
+            p1.minDeposit = savedP1.minDeposit;
+            p1.scheduleOption = savedP1.scheduleOption;
+            p1.customSchedule = savedP1.customSchedule;
+            p1.telegramPhone = savedP1.telegramPhone;
 
             const token = localStorage.getItem('editToken');
-            
             await submitForm(allFormData, token);
         });
     }
@@ -164,14 +166,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 // 4. ENVÍO FINAL (Multipart/Form-Data con Pantalla de Carga)
 // ==========================================
 async function submitForm(formData, editToken = null) {
-    // 🔥 FUNCIONES INTERNAS DE CARGA: Crea una pantalla visual al vuelo
     function toggleLoading(show) {
         let overlay = document.getElementById('submit-loading-overlay');
         if (show) {
             if (!overlay) {
                 overlay = document.createElement('div');
                 overlay.id = 'submit-loading-overlay';
-                // Estilos inyectados directamente para no tener que tocar el CSS
                 overlay.style.cssText = `
                     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                     background: rgba(255, 255, 255, 0.95);
@@ -193,47 +193,32 @@ async function submitForm(formData, editToken = null) {
     }
 
     try {
-        // 🚀 1. ACTIVAMOS LA PANTALLA DE CARGA
         toggleLoading(true);
-
         const endpoint = editToken ? '/update' : '/submit';
         const dataToSend = new FormData();
-        
         const payload = { formData: formData, token: editToken };
         dataToSend.append('data', JSON.stringify(payload));
 
-        console.log("🔍 [SUBMIT] Recuperando archivos del LocalStorage y reconstruyéndolos...");
-
-        // RECONSTRUCCIÓN: Sacamos el texto y lo volvemos archivo
         const storedLogos = JSON.parse(localStorage.getItem('tempLogos') || '[]');
         if (storedLogos.length > 0) {
-            console.log(`🚀 Adjuntando ${storedLogos.length} logos reconstruidos.`);
             storedLogos.forEach(fileObj => {
                 const file = dataURLtoFile(fileObj.data, fileObj.name);
-                if (file) dataToSend.append('logoFiles', file); // 🔥 Agregamos if(file)
+                if (file) dataToSend.append('logoFiles', file);
             });
         }
 
         const storedRefs = JSON.parse(localStorage.getItem('tempReferences') || '[]');
         if (storedRefs.length > 0) {
-            console.log(`🚀 Adjuntando ${storedRefs.length} referencias reconstruidas.`);
             storedRefs.forEach(fileObj => {
                 const file = dataURLtoFile(fileObj.data, fileObj.name);
-                if (file) dataToSend.append('referenceFiles', file); // 🔥 Agregamos if(file)
+                if (file) dataToSend.append('referenceFiles', file);
             });
         }
 
-        // ENVÍO AL SERVIDOR
-        const response = await fetch(`${API_URL}${endpoint}`, { 
-            method: 'POST', 
-            body: dataToSend 
-        });
-
+        const response = await fetch(`${API_URL}${endpoint}`, { method: 'POST', body: dataToSend });
         if (!response.ok) throw new Error(`Error servidor: ${response.status}`);
 
         const result = await response.json();
-        
-        // 🛑 2. DESACTIVAMOS LA PANTALLA DE CARGA CUANDO TERMINA CON ÉXITO
         toggleLoading(false);
         
         if (result.success) {
@@ -242,7 +227,6 @@ async function submitForm(formData, editToken = null) {
             alert('❌ Error: ' + result.message);
         }
     } catch (error) {
-        // 🛑 3. DESACTIVAMOS LA PANTALLA DE CARGA SI HAY UN ERROR CRÍTICO
         toggleLoading(false);
         console.error('❌ Error crítico en submitForm:', error);
         alert('No se pudo enviar el formulario. Revisa tu conexión.');
@@ -259,9 +243,10 @@ async function loadExistingFormData(token) {
         if (data.success) {
             localStorage.setItem('formData', JSON.stringify(data.formData));
             if (data.formData.page1) {
-                localStorage.setItem('gameroomName', data.formData.page1.companyName || '');
-                localStorage.setItem('logoOption', data.formData.page1.logoOption || '');
-                localStorage.setItem('designReferenceText', data.formData.page1.designReferenceText || '');
+                const p1 = data.formData.page1;
+                localStorage.setItem('gameroomName', p1.companyName || '');
+                localStorage.setItem('logoOption', p1.logoOption || '');
+                localStorage.setItem('designReferenceText', p1.designReferenceText || '');
             }
             fillFormFields(data.formData);
             showEditMode();
@@ -279,26 +264,40 @@ function fillFormFields(data) {
 
     if (isIndex) {
         const companySpan = document.getElementById('companyName');
-        if (companySpan && page1Data.companyName) {
-            companySpan.textContent = page1Data.companyName;
-        }
+        if (companySpan && page1Data.companyName) companySpan.textContent = page1Data.companyName;
 
         ['facebook', 'instagram', 'twitter', 'other'].forEach(field => {
             const el = document.getElementById(field);
             if (el) el.value = page1Data[field] || '';
         });
 
-        // 🔥 CORRECCIÓN: Cargar el campo de Details Room
-        const roomDetailsEl = document.getElementById('roomDetails');
-        if (roomDetailsEl) {
-            roomDetailsEl.value = page1Data.roomDetails || '';
+        // 🔥 CARGAR NUEVOS CAMPOS DE ROOM DETAILS EN MODO EDICIÓN
+        if (page1Data.cashoutLimit) document.getElementById('cashoutLimit').value = page1Data.cashoutLimit;
+        if (page1Data.minDeposit) document.getElementById('minDeposit').value = page1Data.minDeposit;
+        
+        if (page1Data.telegramPhone) {
+            const phoneInput = document.getElementById('telegramPhone');
+            if (phoneInput) {
+                phoneInput.value = page1Data.telegramPhone;
+                document.getElementById('phoneCount').textContent = page1Data.telegramPhone.length;
+            }
+        }
+
+        if (page1Data.scheduleOption) {
+            const radio = document.querySelector(`input[name="scheduleOption"][value="${page1Data.scheduleOption}"]`);
+            if (radio) {
+                radio.checked = true;
+                if (page1Data.scheduleOption === 'custom') {
+                    document.getElementById('scheduleTimeRange').style.display = 'block';
+                    document.getElementById('customSchedule').value = page1Data.customSchedule || '';
+                }
+            }
         }
     }
 
     if (isWelcome) {
         const grInput = document.getElementById('gameroomName');
         if (grInput) grInput.value = page1Data.companyName || '';
-        
         const grHeader = document.getElementById('companyNameHeader');
         if (grHeader && page1Data.companyName) grHeader.textContent = page1Data.companyName;
         
@@ -309,9 +308,10 @@ function fillFormFields(data) {
                 if (typeof toggleSelection === 'function') toggleSelection(page1Data.logoOption);
             }
         }
-        
-        const designText = document.getElementById('designReferenceText');
-        if (designText) designText.value = page1Data.designReferenceText || '';
+        if (page1Data.designReferenceText) {
+            const designText = document.getElementById('designReferenceText');
+            if (designText) designText.value = page1Data.designReferenceText;
+        }
     }
 
     if (isPage2) {
@@ -356,7 +356,6 @@ function showSuccessModal(token, editLink, formData) {
     const btnDownloadPDF = document.getElementById('downloadPDF');
 
     if (!modal || !editLinkInput) return;
-
     editLinkInput.value = editLink;
     modal.classList.remove('hidden');
 

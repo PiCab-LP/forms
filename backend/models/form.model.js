@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 
 // Schema para cada versión del formulario
-// (Este lo dejamos igual, guarda el historial tal cual llega)
 const formVersionSchema = new mongoose.Schema({
     versionNumber: {
         type: Number,
@@ -35,8 +34,6 @@ const formSchema = new mongoose.Schema({
         default: 1
     },
     
-    // 🔥 AQUÍ ESTÁ EL CAMBIO IMPORTANTE
-    // Definimos la estructura de Page 1
     formData: {
         page1: {
             // Campos de redes sociales
@@ -46,8 +43,12 @@ const formSchema = new mongoose.Schema({
             twitter: { type: String, default: '' },
             other: { type: String, default: '' },
 
-            // 👇 NUEVO CAMPO: Details Room
-            roomDetails: { type: String, default: '' },
+            // 🔥 NUEVOS CAMPOS ESTRUCTURADOS DE ROOM DETAILS
+            cashoutLimit: { type: String, default: '' },
+            minDeposit: { type: String, default: '' },
+            scheduleOption: { type: String, default: '' }, // '24/7' o 'custom'
+            customSchedule: { type: String, default: '' }, // "14:00 to 21:00"
+            telegramPhone: { type: String, default: '' }, // 10 dígitos
 
             // SECCIÓN: LOGOS
             logoOption: { 
@@ -55,17 +56,11 @@ const formSchema = new mongoose.Schema({
                 enum: ['has-logo', 'needs-logo', 'none'], 
                 default: 'none' 
             },
-            // Array para guardar las URLs de Cloudinary (Opción 1: Ya tengo logo)
             uploadedLogos: { type: [String], default: [] },
-            
-            // Texto descriptivo (Opción 2: Necesito diseño)
             designReferenceText: { type: String, default: '' },
-            
-            // Array para guardar URLs de referencias (Opción 2: Necesito diseño)
             designReferenceImages: { type: [String], default: [] }
         },
         
-        // Mantenemos Page 2 flexible (Object) para no romper tu lógica de managers actual
         page2: { 
             type: Object, 
             default: {} 
@@ -108,7 +103,6 @@ formSchema.methods.detectChanges = function(newData) {
     ['page1', 'page2'].forEach(page => {
         if (newData[page] && oldData[page]) {
             Object.keys(newData[page]).forEach(key => {
-                // Comparamos valores
                 if (JSON.stringify(newData[page][key]) !== JSON.stringify(oldData[page][key])) {
                     if (!changes[page]) changes[page] = {};
                     changes[page][key] = {
