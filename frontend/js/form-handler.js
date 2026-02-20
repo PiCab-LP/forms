@@ -37,10 +37,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     const editToken = urlParams.get('token');
     
-    // Identificar si estamos en Welcome o en las páginas internas
     const isWelcome = !window.location.pathname.includes('page2') && !window.location.pathname.includes('index');
 
-    // 🔥 Limpiar si se borra el token manualmente de la URL
     if (!editToken && localStorage.getItem('editToken')) {
         formManager.clearData();
     }
@@ -60,14 +58,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Manejador del formulario final (Página 2)
     const formPage2 = document.getElementById('formPage2');
     if (formPage2) {
         formPage2.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (typeof validateManagers === 'function' && !validateManagers()) return;
             
-            // 🔥 CAPTURA DE NOMBRE: Asegurar que el span editable se guarde antes de enviar
             const companySpan = document.getElementById('companyName');
             if (companySpan) {
                 localStorage.setItem('gameroomName', companySpan.textContent.trim());
@@ -78,7 +74,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             const allFormData = formManager.getAllData();
             
-            // Re-inyectar datos de identidad persistentes
             if (!allFormData.page1) allFormData.page1 = {};
             allFormData.page1.companyName = localStorage.getItem('gameroomName');
             allFormData.page1.logoOption = localStorage.getItem('logoOption');
@@ -91,18 +86,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-// FUNCIÓN DE ENVÍO CORREGIDA
 async function submitForm(formData, editToken = null) {
     try {
         const endpoint = editToken ? '/update' : '/submit';
         const dataToSend = new FormData();
         
-        // 1. Adjuntar el JSON con toda la información de texto
         const payload = { formData: formData, token: editToken };
         dataToSend.append('data', JSON.stringify(payload));
 
-        // 2. 🔥 CAPTURA DE ARCHIVOS: Buscar físicamente los archivos en el DOM
-        // Esto es vital para que lleguen a Cloudinary y no como arreglos vacíos
         const logoInput = document.getElementById('logoFiles');
         if (logoInput && logoInput.files.length > 0) {
             Array.from(logoInput.files).forEach(file => {
@@ -232,16 +223,39 @@ function getFormDataPage2() {
     return { managers };
 }
 
+// 🔥 CORRECCIÓN: Botón de copiar funcionando y redirección a Thank You
 function showSuccessModal(token, editLink, formData) {
     const modal = document.getElementById('modalConfirmacion');
     const editLinkInput = document.getElementById('editLink');
+    const btnCopy = document.getElementById('copyLink');
+    const btnClose = document.getElementById('closeModal');
+
     if (!modal || !editLinkInput) return;
+
     editLinkInput.value = editLink;
     modal.classList.remove('hidden');
-    document.getElementById('closeModal')?.addEventListener('click', () => {
-        formManager.clearData();
-        window.location.href = 'welcome.html';
-    });
+
+    if (btnCopy) {
+        btnCopy.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(editLink);
+                const originalText = btnCopy.textContent;
+                btnCopy.textContent = '✅ Copied!';
+                setTimeout(() => { btnCopy.textContent = originalText; }, 2000);
+            } catch (err) {
+                editLinkInput.select();
+                document.execCommand('copy');
+            }
+        });
+    }
+
+    if (btnClose) {
+        btnClose.addEventListener('click', () => {
+            formManager.clearData();
+            // Cambiamos 'welcome.html' por 'thank-you.html'
+            window.location.href = 'thank-you.html'; 
+        });
+    }
 }
 
 function showEditMode() {
