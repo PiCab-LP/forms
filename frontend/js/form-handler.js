@@ -89,44 +89,49 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function submitForm(formData, editToken = null) {
     try {
         const endpoint = editToken ? '/update' : '/submit';
-        const dataToSend = new FormData(); // 🔥 Esto DEBE generar multipart/form-data automáticamente
+        const dataToSend = new FormData();
         
-        // 1. Metemos el JSON
+        // 1. Adjuntar el JSON de texto
         const payload = { formData: formData, token: editToken };
         dataToSend.append('data', JSON.stringify(payload));
 
-        // 2. 🔥 CAPTURA CRÍTICA: Asegurémonos de obtener los archivos REALES
+        // 2. 🔥 CAPTURA DE ARCHIVOS (Modo Infalible)
         const logoInput = document.getElementById('logoFiles');
         const refInput = document.getElementById('referenceFiles');
 
+        // LOGS DE DEPURACIÓN: Revisa esto en tu consola (F12)
+        console.log("🔍 Verificando archivos antes de enviar...");
+
         if (logoInput && logoInput.files.length > 0) {
-            console.log(`📁 Adjuntando ${logoInput.files.length} logos...`);
-            for (let i = 0; i < logoInput.files.length; i++) {
-                dataToSend.append('logoFiles', logoInput.files[i]);
-            }
+            console.log(`✅ Se encontraron ${logoInput.files.length} logos.`);
+            Array.from(logoInput.files).forEach((file, index) => {
+                dataToSend.append('logoFiles', file); 
+            });
+        } else {
+            console.warn("⚠️ No se seleccionaron logos o el input 'logoFiles' no existe.");
         }
 
         if (refInput && refInput.files.length > 0) {
-            console.log(`📁 Adjuntando ${refInput.files.length} referencias...`);
-            for (let i = 0; i < refInput.files.length; i++) {
-                dataToSend.append('referenceFiles', refInput.files[i]);
-            }
+            console.log(`✅ Se encontraron ${refInput.files.length} referencias.`);
+            Array.from(refInput.files).forEach((file, index) => {
+                dataToSend.append('referenceFiles', file);
+            });
         }
 
-        // 3. El Fetch (IMPORTANTE: NO pongas 'headers', deja que el navegador lo haga solo)
+        // 3. ENVÍO (IMPORTANTE: Sin definir headers manualmente)
         const response = await fetch(`${API_URL}${endpoint}`, { 
             method: 'POST', 
-            body: dataToSend // Al pasar dataToSend, el navegador pone multipart/form-data solo
+            body: dataToSend 
         });
 
         const result = await response.json();
         if (result.success) {
             showSuccessModal(result.token, result.editLink, formData);
         } else {
-            alert('❌ Error: ' + result.message);
+            alert('❌ Error del servidor: ' + result.message);
         }
     } catch (error) {
-        console.error('❌ Error en el envío:', error);
+        console.error('❌ Error crítico en submitForm:', error);
     }
 }
 
