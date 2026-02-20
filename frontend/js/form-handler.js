@@ -89,44 +89,44 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function submitForm(formData, editToken = null) {
     try {
         const endpoint = editToken ? '/update' : '/submit';
-        const dataToSend = new FormData();
+        const dataToSend = new FormData(); // 🔥 Esto DEBE generar multipart/form-data automáticamente
         
+        // 1. Metemos el JSON
         const payload = { formData: formData, token: editToken };
         dataToSend.append('data', JSON.stringify(payload));
 
+        // 2. 🔥 CAPTURA CRÍTICA: Asegurémonos de obtener los archivos REALES
         const logoInput = document.getElementById('logoFiles');
-        if (logoInput && logoInput.files.length > 0) {
-            Array.from(logoInput.files).forEach(file => {
-                dataToSend.append('logoFiles', file);
-            });
-        }
-
         const refInput = document.getElementById('referenceFiles');
-        if (refInput && refInput.files.length > 0) {
-            Array.from(refInput.files).forEach(file => {
-                dataToSend.append('referenceFiles', file);
-            });
+
+        if (logoInput && logoInput.files.length > 0) {
+            console.log(`📁 Adjuntando ${logoInput.files.length} logos...`);
+            for (let i = 0; i < logoInput.files.length; i++) {
+                dataToSend.append('logoFiles', logoInput.files[i]);
+            }
         }
 
+        if (refInput && refInput.files.length > 0) {
+            console.log(`📁 Adjuntando ${refInput.files.length} referencias...`);
+            for (let i = 0; i < refInput.files.length; i++) {
+                dataToSend.append('referenceFiles', refInput.files[i]);
+            }
+        }
+
+        // 3. El Fetch (IMPORTANTE: NO pongas 'headers', deja que el navegador lo haga solo)
         const response = await fetch(`${API_URL}${endpoint}`, { 
             method: 'POST', 
-            body: dataToSend 
+            body: dataToSend // Al pasar dataToSend, el navegador pone multipart/form-data solo
         });
 
-        if (!response.ok) {
-            throw new Error(`Error en servidor: ${response.status}`);
-        }
-
         const result = await response.json();
-
         if (result.success) {
             showSuccessModal(result.token, result.editLink, formData);
         } else {
             alert('❌ Error: ' + result.message);
         }
     } catch (error) {
-        console.error('❌ Error submitting form:', error);
-        alert('Error al enviar el formulario. Verifica tu conexión.');
+        console.error('❌ Error en el envío:', error);
     }
 }
 
