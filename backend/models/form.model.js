@@ -36,20 +36,23 @@ const formSchema = new mongoose.Schema({
     },
     
     // 🔥 AQUÍ ESTÁ EL CAMBIO IMPORTANTE
-    // Antes era "type: Object", ahora definimos la estructura de Page 1
+    // Definimos la estructura de Page 1
     formData: {
         page1: {
-            // Campos de redes sociales (según tu form actual)
+            // Campos de redes sociales
             companyName: { type: String, default: '' },
             facebook: { type: String, default: '' },
             instagram: { type: String, default: '' },
             twitter: { type: String, default: '' },
             other: { type: String, default: '' },
 
-            // 👇 NUEVA SECCIÓN: LOGOS
+            // 👇 NUEVO CAMPO: Details Room
+            roomDetails: { type: String, default: '' },
+
+            // SECCIÓN: LOGOS
             logoOption: { 
                 type: String, 
-                enum: ['has-logo', 'needs-logo', 'none'], // Solo permite estos 3 valores
+                enum: ['has-logo', 'needs-logo', 'none'], 
                 default: 'none' 
             },
             // Array para guardar las URLs de Cloudinary (Opción 1: Ya tengo logo)
@@ -97,7 +100,7 @@ const formSchema = new mongoose.Schema({
     }
 });
 
-// Método para comparar cambios entre versiones (Sin cambios, sigue funcionando igual)
+// Método para comparar cambios entre versiones
 formSchema.methods.detectChanges = function(newData) {
     const changes = {};
     const oldData = this.formData;
@@ -105,8 +108,7 @@ formSchema.methods.detectChanges = function(newData) {
     ['page1', 'page2'].forEach(page => {
         if (newData[page] && oldData[page]) {
             Object.keys(newData[page]).forEach(key => {
-                // Comparamos valores. Nota: Al usar esquemas, oldData[page] es un documento Mongoose,
-                // pero acceder a properties por [key] sigue funcionando.
+                // Comparamos valores
                 if (JSON.stringify(newData[page][key]) !== JSON.stringify(oldData[page][key])) {
                     if (!changes[page]) changes[page] = {};
                     changes[page][key] = {

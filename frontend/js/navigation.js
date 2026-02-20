@@ -31,25 +31,29 @@ if (document.getElementById('btnNext')) {
         const instagramEl = document.getElementById('instagram');
         const twitterEl = document.getElementById('twitter');
         const otherEl = document.getElementById('other');
+        const roomDetailsEl = document.getElementById('roomDetails'); // 🔥 NUEVO
         
         console.log('🔍 VERIFICANDO EXISTENCIA DE ELEMENTOS:');
         console.log('  facebookEl existe:', !!facebookEl);
         console.log('  instagramEl existe:', !!instagramEl);
         console.log('  twitterEl existe:', !!twitterEl);
         console.log('  otherEl existe:', !!otherEl);
+        console.log('  roomDetailsEl existe:', !!roomDetailsEl);
         
         console.log('🔍 VALORES CRUDOS EN EL DOM (sin trim):');
-        console.log('  Facebook valor:', facebookEl ? `"${facebookEl.value}"` : 'ELEMENTO NO ENCONTRADO');
-        console.log('  Instagram valor:', instagramEl ? `"${instagramEl.value}"` : 'ELEMENTO NO ENCONTRADO');
-        console.log('  Twitter valor:', twitterEl ? `"${twitterEl.value}"` : 'ELEMENTO NO ENCONTRADO');
-        console.log('  Other valor:', otherEl ? `"${otherEl.value}"` : 'ELEMENTO NO ENCONTRADO');
+        console.log('  Facebook valor:', facebookEl ? `"${facebookEl.value}"` : 'NO ENCONTRADO');
+        console.log('  Instagram valor:', instagramEl ? `"${instagramEl.value}"` : 'NO ENCONTRADO');
+        console.log('  Twitter valor:', twitterEl ? `"${twitterEl.value}"` : 'NO ENCONTRADO');
+        console.log('  Other valor:', otherEl ? `"${otherEl.value}"` : 'NO ENCONTRADO');
+        console.log('  Room Details valor:', roomDetailsEl ? `"${roomDetailsEl.value}"` : 'NO ENCONTRADO');
         
         const page1Data = {
             companyName: companyName,
             facebook: facebookEl ? facebookEl.value.trim() : '',
             instagram: instagramEl ? instagramEl.value.trim() : '',
             twitter: twitterEl ? twitterEl.value.trim() : '',
-            other: otherEl ? otherEl.value.trim() : ''
+            other: otherEl ? otherEl.value.trim() : '',
+            roomDetails: roomDetailsEl ? roomDetailsEl.value.trim() : '' // 🔥 NUEVO: Añadido al objeto
         };
         
         console.log('🔍 DATOS CAPTURADOS DESPUÉS DE TRIM:');
@@ -57,6 +61,7 @@ if (document.getElementById('btnNext')) {
         console.log('  Instagram:', page1Data.instagram || '[VACÍO]');
         console.log('  Twitter:', page1Data.twitter || '[VACÍO]');
         console.log('  Other:', page1Data.other || '[VACÍO]');
+        console.log('  Room Details:', page1Data.roomDetails || '[VACÍO]');
         
         console.log('📦 OBJETO COMPLETO page1Data:', JSON.stringify(page1Data, null, 2));
         
@@ -134,11 +139,11 @@ window.addEventListener('DOMContentLoaded', () => {
     
     if (currentPage === 1) {
         // 🔥 Si hay token, esperar un momento para que form-handler.js cargue los datos
-if (hasEditToken) {
-    console.log('⏭️ Modo edición detectado');
-    console.log('✅ form-handler.js se encarga de cargar y llenar los datos del servidor');
-    return;
-}
+        if (hasEditToken) {
+            console.log('⏭️ Modo edición detectado');
+            console.log('✅ form-handler.js se encarga de cargar y llenar los datos del servidor');
+            return;
+        }
         
         console.log('📂 Cargando datos desde localStorage (nuevo formulario)');
         
@@ -176,6 +181,13 @@ if (hasEditToken) {
         if (otherEl) {
             otherEl.value = savedData.other || '';
             console.log('✅ Other cargado:', savedData.other || '[VACÍO]');
+        }
+
+        // 🔥 NUEVO: Cargar el campo de Details Room
+        const roomDetailsEl = document.getElementById('roomDetails');
+        if (roomDetailsEl) {
+            roomDetailsEl.value = savedData.roomDetails || '';
+            console.log('✅ Room Details cargado:', savedData.roomDetails || '[VACÍO]');
         }
     }
     

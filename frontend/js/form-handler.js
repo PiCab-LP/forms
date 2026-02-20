@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// ==========================================
 // 4. ENVÍO FINAL (Multipart/Form-Data con Pantalla de Carga)
 // ==========================================
 async function submitForm(formData, editToken = null) {
@@ -250,6 +251,12 @@ function fillFormFields(data) {
             const el = document.getElementById(field);
             if (el) el.value = page1Data[field] || '';
         });
+
+        // 🔥 CORRECCIÓN: Cargar el campo de Details Room
+        const roomDetailsEl = document.getElementById('roomDetails');
+        if (roomDetailsEl) {
+            roomDetailsEl.value = page1Data.roomDetails || '';
+        }
     }
 
     if (isWelcome) {

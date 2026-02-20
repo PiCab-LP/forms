@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wysaro - Social Networks</title>
+    <title>Wysaro - Social Networks & Details</title>
     <link rel="icon" type="image/x-icon" href="./imgs/wysaro-isologo-black.png">
     <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -48,8 +48,22 @@
             <div id="socialNetworkError" class="error-message" style="display: none;">
                 ⚠️ Please complete at least one social network to continue
             </div>
-            
-            <div class="form-actions">
+
+            <div style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+                <h2>Details Room</h2>
+                <p class="subtitle" style="margin-bottom: 15px;">
+                    Does your gameroom have rules regarding cashouts, cashout schedules, or bonuses that we should be aware of? Any details we should know to provide your customers with a complete experience?
+                </p>
+                <div class="form-group">
+                    <textarea 
+                        id="roomDetails" 
+                        name="roomDetails" 
+                        placeholder="Let us know everything so we can give your customers a complete experience..."
+                        style="width: 100%; height: 120px; padding: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: inherit; font-size: 15px; resize: vertical; box-sizing: border-box;"
+                    ></textarea>
+                </div>
+            </div>
+            <div class="form-actions" style="margin-top: 30px;">
                 <button type="button" class="btn-next" id="btnNext">Next →</button>
             </div>
         </form>
