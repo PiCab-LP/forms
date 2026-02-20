@@ -6,6 +6,22 @@
     <title>Wysaro - Social Networks & Details</title>
     <link rel="icon" type="image/x-icon" href="./imgs/wysaro-isologo-black.png">
     <link rel="stylesheet" href="css/styles.css">
+    
+    <style>
+        /* 🔥 ESTILOS PARA EL PLACEHOLDER Y EL CONTADOR */
+        #roomDetails::placeholder {
+            color: #b0b0b0; /* Gris claro para que no compita con la descripción */
+            font-size: 13.5px; /* Un poco más pequeño */
+            font-weight: 400;
+        }
+        .char-counter {
+            font-size: 12px;
+            color: #888;
+            text-align: right;
+            margin-top: 6px;
+            font-family: sans-serif;
+        }
+    </style>
 </head>
 <body>
     <div class="form-container">
@@ -50,17 +66,20 @@
             </div>
 
             <div style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
-                <h2>Details Room</h2>
-                <p class="subtitle" style="margin-bottom: 15px;">
+                <h2 style="text-align: center;">Details Room</h2>
+                <p class="subtitle" style="margin-bottom: 15px; text-align: center;">
                     Does your gameroom have rules regarding cashouts, cashout schedules, or bonuses that we should be aware of? Any details we should know to provide your customers with a complete experience?
                 </p>
                 <div class="form-group">
                     <textarea 
                         id="roomDetails" 
                         name="roomDetails" 
+                        maxlength="500"
+                        oninput="document.getElementById('roomDetailsCount').textContent = this.value.length + ' / 500'"
                         placeholder="Let us know everything so we can give your customers a complete experience..."
-                        style="width: 100%; height: 120px; padding: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: inherit; font-size: 15px; resize: vertical; box-sizing: border-box;"
+                        style="width: 100%; height: 120px; padding: 15px; border-radius: 8px; border: 1px solid #ccc; font-family: inherit; font-size: 15px; resize: vertical; box-sizing: border-box; color: #333;"
                     ></textarea>
+                    <div class="char-counter" id="roomDetailsCount">0 / 500</div>
                 </div>
             </div>
             <div class="form-actions" style="margin-top: 30px;">
@@ -82,7 +101,6 @@
         
         if (hasToken) {
             console.log('✅ Token detectado, omitiendo verificación de gameroomName');
-            // En modo edición, el nombre se cargará desde el servidor
             return;
         }
         
@@ -90,7 +108,6 @@
         
         // Si no hay nombre y NO hay token, redirigir a welcome
         if (!gameroomName) {
-            console.log('⚠️ No hay gameroomName, redirigiendo a welcome');
             window.location.href = 'welcome.html';
             return;
         }
@@ -105,6 +122,14 @@
             companyNameElement.style.cursor = 'default';
             companyNameElement.style.borderBottom = 'none';
         }
+
+        // 🔥 EXTRA: Actualizar el contador si el usuario recarga la página o viene de regreso ("Back")
+        setTimeout(() => {
+            const roomDetailsEl = document.getElementById('roomDetails');
+            if (roomDetailsEl && roomDetailsEl.value) {
+                document.getElementById('roomDetailsCount').textContent = roomDetailsEl.value.length + ' / 500';
+            }
+        }, 100);
     });
 </script>
 
