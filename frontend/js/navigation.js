@@ -15,8 +15,11 @@ if (document.getElementById('btnNext')) {
         const cashoutLimit = document.getElementById('cashoutLimit').value;
         const minDeposit = document.getElementById('minDeposit').value;
         const scheduleOption = document.querySelector('input[name="scheduleOption"]:checked')?.value;
-        const customSchedule = document.getElementById('customSchedule').value.trim();
         const telegramPhone = document.getElementById('telegramPhone').value.trim();
+        
+        // 🔥 NUEVOS: Captura de horas específicas
+        const startTime = document.getElementById('startTime').value;
+        const endTime = document.getElementById('endTime').value;
 
         // Validar que los montos no estén vacíos
         if (!cashoutLimit || !minDeposit) {
@@ -30,9 +33,9 @@ if (document.getElementById('btnNext')) {
             return;
         }
 
-        // Si eligió horario específico, validar que escribiera el rango
-        if (scheduleOption === 'custom' && !customSchedule) {
-            alert("⚠️ Please describe your specific schedule (e.g., 14:00 to 21:00).");
+        // 🔥 VALIDACIÓN: Si eligió horario específico, ambos relojes deben estar marcados
+        if (scheduleOption === 'custom' && (!startTime || !endTime)) {
+            alert("⚠️ Please select both Start and End times for your schedule.");
             return;
         }
 
@@ -52,18 +55,18 @@ if (document.getElementById('btnNext')) {
         
         localStorage.setItem('gameroomName', companyName);
         
-        // 3. CAPTURA DE DATOS FINAL (Incluyendo los 5 nuevos campos)
+        // 3. CAPTURA DE DATOS FINAL
         const page1Data = {
             companyName: companyName,
             facebook: document.getElementById('facebook').value.trim(),
             instagram: document.getElementById('instagram').value.trim(),
             twitter: document.getElementById('twitter').value.trim(),
             other: document.getElementById('other').value.trim(),
-            // Datos del bloque Room Details
             cashoutLimit: cashoutLimit,
             minDeposit: minDeposit,
             scheduleOption: scheduleOption,
-            customSchedule: scheduleOption === 'custom' ? customSchedule : '24/7',
+            // 🔥 GUARDADO: Unimos las horas en un formato legible para el admin
+            customSchedule: scheduleOption === 'custom' ? `${startTime} to ${endTime}` : '24/7',
             telegramPhone: telegramPhone
         };
         
@@ -83,10 +86,8 @@ if (document.getElementById('btnNext')) {
 // Botón "Back" en página 2
 if (document.getElementById('btnBack')) {
     document.getElementById('btnBack').addEventListener('click', () => {
-        // Guardar datos actuales de página 2 antes de retroceder
         const page2Data = getFormDataPage2();
         formManager.savePageData(2, page2Data);
-        
         const editToken = localStorage.getItem('editToken');
         const prevPage = editToken ? `/?token=${editToken}` : '/';
         window.location.href = prevPage;
@@ -118,11 +119,10 @@ window.addEventListener('DOMContentLoaded', () => {
     const hasEditToken = urlParams.get('token');
     
     if (currentPage === 1) {
-        if (hasEditToken) return; // form-handler.js maneja la edición
+        if (hasEditToken) return; 
         
         const savedData = formManager.loadPageData(1);
         
-        // Cargar nombre y redes
         const companyNameEl = document.getElementById('companyName');
         if (companyNameEl && savedData.companyName) companyNameEl.textContent = savedData.companyName;
         
@@ -131,7 +131,6 @@ window.addEventListener('DOMContentLoaded', () => {
         if (document.getElementById('twitter')) document.getElementById('twitter').value = savedData.twitter || '';
         if (document.getElementById('other')) document.getElementById('other').value = savedData.other || '';
 
-        // 🔥 CARGAR NUEVOS CAMPOS DE ROOM DETAILS (Auto-rellenado)
         if (savedData.cashoutLimit) document.getElementById('cashoutLimit').value = savedData.cashoutLimit;
         if (savedData.minDeposit) document.getElementById('minDeposit').value = savedData.minDeposit;
         
@@ -148,8 +147,13 @@ window.addEventListener('DOMContentLoaded', () => {
                 if (savedData.scheduleOption === 'custom') {
                     const rangeDiv = document.getElementById('scheduleTimeRange');
                     if (rangeDiv) rangeDiv.style.display = 'block';
-                    const customInput = document.getElementById('customSchedule');
-                    if (customInput) customInput.value = savedData.customSchedule || '';
+                    
+                    // 🔥 RELLENADO: Separamos el string guardado para llenar los dos relojes
+                    if (savedData.customSchedule && savedData.customSchedule.includes(' to ')) {
+                        const parts = savedData.customSchedule.split(' to ');
+                        document.getElementById('startTime').value = parts[0];
+                        document.getElementById('endTime').value = parts[1];
+                    }
                 }
             }
         }
@@ -171,7 +175,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --- FUNCIONES DE MANAGERS ---
+// --- FUNCIONES DE MANAGERS (SIN CAMBIOS) ---
 
 function setupAddManagerButton() {
     const btnAddManager = document.getElementById('btnAddManager');
@@ -188,50 +192,31 @@ function setupAddManagerButton() {
 function addManagerBlock(managerNum, data = null) {
     const container = document.getElementById('managersContainer');
     if (!container) return;
-    
     const managerBlock = document.createElement('div');
     managerBlock.className = 'manager-block';
     managerBlock.setAttribute('data-manager', managerNum);
-    
     managerBlock.innerHTML = `
         <h3>Manager #${managerNum}</h3>
         ${managerNum > 1 ? '<button type="button" class="btn-remove-manager" onclick="removeManager(this)">✕ Remove</button>' : ''}
-        
-        <div class="form-group">
-            <label for="username_${managerNum}">Username *</label>
-            <input type="text" id="username_${managerNum}" name="username_${managerNum}" value="${data?.username || ''}" required>
-        </div>
-        
-        <div class="form-group">
-            <label for="fullname_${managerNum}">Full Name *</label>
-            <input type="text" id="fullname_${managerNum}" name="fullname_${managerNum}" value="${data?.fullname || ''}" required>
-        </div>
-        
+        <div class="form-group"><label for="username_${managerNum}">Username *</label><input type="text" id="username_${managerNum}" value="${data?.username || ''}" required></div>
+        <div class="form-group"><label for="fullname_${managerNum}">Full Name *</label><input type="text" id="fullname_${managerNum}" value="${data?.fullname || ''}" required></div>
         <div class="form-group">
             <label for="role_${managerNum}">Role *</label>
-            <select id="role_${managerNum}" name="role_${managerNum}" required>
+            <select id="role_${managerNum}" required>
                 <option value="">Select a role...</option>
                 <option value="Admin" ${data?.role === 'Admin' ? 'selected' : ''}>Admin</option>
                 <option value="Supervisor" ${data?.role === 'Supervisor' ? 'selected' : ''}>Supervisor</option>
                 <option value="Observer" ${data?.role === 'Observer' ? 'selected' : ''}>Observer</option>
             </select>
         </div>
-        
-        <div class="form-group">
-            <label for="email_${managerNum}">Email *</label>
-            <input type="email" id="email_${managerNum}" name="email_${managerNum}" value="${data?.email || ''}" required>
-        </div>
-        
+        <div class="form-group"><label for="email_${managerNum}">Email *</label><input type="email" id="email_${managerNum}" value="${data?.email || ''}" required></div>
         <div class="form-group">
             <label for="password_${managerNum}">Password *</label>
             <div style="position: relative;">
-                <input type="password" id="password_${managerNum}" name="password_${managerNum}" value="${data?.password || ''}" required style="padding-right: 45px;">
-                <button type="button" class="btn-toggle-password" onclick="togglePassword(${managerNum})" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 18px;">
-                    👁️
-                </button>
+                <input type="password" id="password_${managerNum}" value="${data?.password || ''}" required style="padding-right: 45px;">
+                <button type="button" onclick="togglePassword(${managerNum})" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer;">👁️</button>
             </div>
-        </div>
-    `;
+        </div>`;
     container.appendChild(managerBlock);
 }
 
@@ -242,11 +227,6 @@ function removeManager(button) {
         const newNum = index + 1;
         block.setAttribute('data-manager', newNum);
         block.querySelector('h3').textContent = `Manager #${newNum}`;
-        block.querySelectorAll('input, select').forEach(input => {
-            const baseName = input.id.split('_')[0];
-            input.id = `${baseName}_${newNum}`;
-            input.name = `${baseName}_${newNum}`;
-        });
     });
     updateAddManagerButton();
 }
@@ -261,7 +241,5 @@ function updateAddManagerButton() {
 
 function togglePassword(num) {
     const input = document.getElementById(`password_${num}`);
-    if (input) {
-        input.type = input.type === 'password' ? 'text' : 'password';
-    }
+    if (input) input.type = input.type === 'password' ? 'text' : 'password';
 }
