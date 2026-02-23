@@ -239,9 +239,67 @@ function getFormDataPage2() {
 
 function showSuccessModal(token, editLink, formData) {
     const modal = document.getElementById('modalConfirmacion');
-    if (modal) {
-        document.getElementById('editLink').value = editLink;
-        modal.classList.remove('hidden');
+    const editLinkInput = document.getElementById('editLink');
+    const btnCopy = document.getElementById('copyLink');
+    const btnClose = document.getElementById('closeModal');
+    const btnDownloadPDF = document.getElementById('downloadPDF');
+
+    if (!modal || !editLinkInput) return;
+
+    // Asignamos el link al input para que se vea
+    editLinkInput.value = editLink;
+    
+    // Mostramos el modal quitando la clase hidden
+    modal.classList.remove('hidden');
+
+    // --- 1. LÓGICA DEL BOTÓN COPIAR ---
+    if (btnCopy) {
+        // Limpiamos eventos previos para evitar duplicados
+        const newBtnCopy = btnCopy.cloneNode(true);
+        btnCopy.parentNode.replaceChild(newBtnCopy, btnCopy);
+
+        newBtnCopy.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(editLink);
+                const originalText = newBtnCopy.textContent;
+                newBtnCopy.textContent = '✅ Copied!';
+                newBtnCopy.style.backgroundColor = '#48bb78';
+                setTimeout(() => { 
+                    newBtnCopy.textContent = originalText;
+                    newBtnCopy.style.backgroundColor = ''; 
+                }, 2000);
+            } catch (err) {
+                // Respaldo por si falla navigator.clipboard
+                editLinkInput.select();
+                document.execCommand('copy');
+            }
+        });
+    }
+
+    // --- 2. LÓGICA DEL BOTÓN DOWNLOAD PDF ---
+    if (btnDownloadPDF) {
+        const newBtnDownload = btnDownloadPDF.cloneNode(true);
+        btnDownloadPDF.parentNode.replaceChild(newBtnDownload, btnDownloadPDF);
+
+        newBtnDownload.addEventListener('click', () => {
+            if (typeof generatePDF === 'function') {
+                generatePDF(formData);
+            } else {
+                console.error("❌ Función generatePDF no encontrada");
+                alert("PDF generation is not available at this moment.");
+            }
+        });
+    }
+
+    // --- 3. LÓGICA DEL BOTÓN CLOSE ---
+    if (btnClose) {
+        const newBtnClose = btnClose.cloneNode(true);
+        btnClose.parentNode.replaceChild(newBtnClose, btnClose);
+
+        newBtnClose.addEventListener('click', () => {
+            formManager.clearData();
+            window.location.href = 'thank-you.html'; 
+        });
     }
 }
 
