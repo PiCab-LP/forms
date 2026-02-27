@@ -53,11 +53,11 @@
             left: 15px;
             color: #333;
             font-weight: bold;
-            pointer-events: none; /* Evita que el click en el $ bloquee el input */
+            pointer-events: none;
         }
 
         .currency-input-wrapper input {
-            padding-left: 30px !important; /* Deja espacio para el $ */
+            padding-left: 30px !important;
         }
 
         /* Ocultar las flechas arriba/abajo de los inputs numéricos */
@@ -67,7 +67,6 @@
             margin: 0;
         }
 
-        /* 🔥 ESTILO PARA EL WEBSITE PREVIEW */
         .website-preview-box {
             margin: 20px auto 30px;
             padding: 15px;
@@ -76,6 +75,15 @@
             border-radius: 12px;
             text-align: center;
             max-width: 100%;
+        }
+
+        /* 🔥 Estilos para la nueva sección Tierlock */
+        .tierlock-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 12px;
+            border: 1px solid #eee;
         }
     </style>
 </head>
@@ -101,6 +109,40 @@
                 <strong id="generatedLink" style="display: block; font-size: 18px; color: #667eea; margin-top: 5px; word-break: break-all;">
                     www.loading.wysaro.com
                 </strong>
+            </div>
+
+            <div class="tierlock-section">
+                <h2 style="text-align: center; margin-top: 0;">Tierlock Information</h2>
+                <p class="subtitle" style="text-align: center; margin-bottom: 20px;">Please provide us the following information according your tierlock account</p>
+                
+                <div class="form-group">
+                    <label for="tierlockPhone">Tierlock Phone Number *</label>
+                    <div class="phone-input-container">
+                        <span class="phone-prefix">+1</span>
+                        <input type="tel" 
+                               id="tierlockPhone" 
+                               name="tierlockPhone" 
+                               maxlength="10" 
+                               placeholder="10 digits" 
+                               style="flex: 1;" 
+                               inputmode="numeric"
+                               oninput="this.value = this.value.replace(/\D/g, ''); document.getElementById('tierlockPhoneCount').textContent = this.value.length"
+                               required>
+                    </div>
+                    
+                </div>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="tierlockUsername">Tierlock Username *</label>
+                    <input type="text" 
+                           id="tierlockUsername" 
+                           name="tierlockUsername" 
+                           maxlength="100" 
+                           placeholder="Enter your Tierlock username"
+                           oninput="document.getElementById('tierlockUserCount').textContent = this.value.length + ' / 100'"
+                           required>
+                    
+                </div>
             </div>
             
             <h2>Social Networks</h2>
@@ -223,16 +265,14 @@
         const urlParams = new URLSearchParams(window.location.search);
         const hasToken = urlParams.get('token');
         
-        // Función para actualizar el link dinámicamente
         const updateGeneratedLink = (name) => {
             const linkElement = document.getElementById('generatedLink');
             if (linkElement) {
-                // Formatear: minúsculas, quitar espacios y caracteres especiales básicos
                 const formattedName = name
                     .toLowerCase()
                     .trim()
-                    .replace(/\s+/g, '') // Quita espacios
-                    .replace(/[^a-z0-9]/g, ''); // Quita símbolos si los hubiera
+                    .replace(/\s+/g, '') 
+                    .replace(/[^a-z0-9]/g, ''); 
                 
                 linkElement.textContent = `www.${formattedName}.wysaro.com`;
             }
@@ -252,15 +292,19 @@
             companyNameElement.contentEditable = 'false';
             companyNameElement.style.cursor = 'default';
             companyNameElement.style.borderBottom = 'none';
-            
-            // Actualizar el link inicial
             updateGeneratedLink(gameroomName);
         }
 
-        // Actualizar contadores si hay datos previos
         setTimeout(() => {
             const phone = document.getElementById('telegramPhone');
             if (phone) document.getElementById('phoneCount').textContent = phone.value.length;
+            
+            // 🔥 Actualizar contadores iniciales de Tierlock
+            const tPhone = document.getElementById('tierlockPhone');
+            if (tPhone) document.getElementById('tierlockPhoneCount').textContent = tPhone.value.length;
+            
+            const tUser = document.getElementById('tierlockUsername');
+            if (tUser) document.getElementById('tierlockUserCount').textContent = tUser.value.length + ' / 100';
         }, 100);
     });
 </script>

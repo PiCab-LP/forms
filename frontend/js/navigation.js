@@ -11,35 +11,45 @@ if (document.getElementById('btnNext')) {
             return;
         }
 
-        // 2. 🔥 VALIDACIONES DE ROOM DETAILS (TODOS OBLIGATORIOS)
+        // 2. 🔥 VALIDACIONES DE ROOM DETAILS Y TIERLOCK
         const cashoutLimit = document.getElementById('cashoutLimit').value;
         const minDeposit = document.getElementById('minDeposit').value;
         const scheduleOption = document.querySelector('input[name="scheduleOption"]:checked')?.value;
         const telegramPhone = document.getElementById('telegramPhone').value.trim();
         
-        // 🔥 NUEVOS: Captura de horas específicas
+        // 🔥 NUEVOS: Captura de Tierlock y Horario
+        const tierlockPhone = document.getElementById('tierlockPhone').value.trim();
+        const tierlockUsername = document.getElementById('tierlockUsername').value.trim();
         const startTime = document.getElementById('startTime').value;
         const endTime = document.getElementById('endTime').value;
 
-        // Validar que los montos no estén vacíos
+        // Validar montos operativos
         if (!cashoutLimit || !minDeposit) {
             alert("⚠️ Please enter both Cashout Limit and Minimum Deposit.");
             return;
         }
 
-        // Validar que se haya seleccionado una opción de horario
+        // Validar Tierlock (Obligatorios)
+        if (tierlockPhone.length !== 10) {
+            alert("⚠️ Please enter a valid 10-digit USA phone number for Tierlock.");
+            return;
+        }
+        if (!tierlockUsername) {
+            alert("⚠️ Please enter your Tierlock username.");
+            return;
+        }
+
+        // Validar Horario
         if (!scheduleOption) {
             alert("⚠️ Please select a cashout schedule option (24/7 or Specific).");
             return;
         }
-
-        // 🔥 VALIDACIÓN: Si eligió horario específico, ambos relojes deben estar marcados
         if (scheduleOption === 'custom' && (!startTime || !endTime)) {
             alert("⚠️ Please select both Start and End times for your schedule.");
             return;
         }
 
-        // Validación estricta de 10 dígitos para USA
+        // Validar Telegram
         if (telegramPhone.length !== 10) {
             alert("⚠️ Please enter a valid 10-digit USA phone number for Telegram.");
             return;
@@ -55,7 +65,7 @@ if (document.getElementById('btnNext')) {
         
         localStorage.setItem('gameroomName', companyName);
         
-        // 3. CAPTURA DE DATOS FINAL
+        // 3. CAPTURA DE DATOS FINAL (Incluyendo los campos de Tierlock)
         const page1Data = {
             companyName: companyName,
             facebook: document.getElementById('facebook').value.trim(),
@@ -65,9 +75,11 @@ if (document.getElementById('btnNext')) {
             cashoutLimit: cashoutLimit,
             minDeposit: minDeposit,
             scheduleOption: scheduleOption,
-            // 🔥 GUARDADO: Unimos las horas en un formato legible para el admin
             customSchedule: scheduleOption === 'custom' ? `${startTime} to ${endTime}` : '24/7',
-            telegramPhone: telegramPhone
+            telegramPhone: telegramPhone,
+            // 🔥 GUARDADO DE TIERLOCK
+            tierlockPhone: tierlockPhone,
+            tierlockUsername: tierlockUsername
         };
         
         console.log('📦 OBJETO COMPLETO page1Data:', JSON.stringify(page1Data, null, 2));
@@ -139,6 +151,18 @@ window.addEventListener('DOMContentLoaded', () => {
             const countEl = document.getElementById('phoneCount');
             if (countEl) countEl.textContent = savedData.telegramPhone.length;
         }
+
+        // 🔥 CARGAR DATOS DE TIERLOCK SI EXISTEN
+        if (savedData.tierlockPhone) {
+            document.getElementById('tierlockPhone').value = savedData.tierlockPhone;
+            const tPhoneCount = document.getElementById('tierlockPhoneCount');
+            if (tPhoneCount) tPhoneCount.textContent = savedData.tierlockPhone.length;
+        }
+        if (savedData.tierlockUsername) {
+            document.getElementById('tierlockUsername').value = savedData.tierlockUsername;
+            const tUserCount = document.getElementById('tierlockUserCount');
+            if (tUserCount) tUserCount.textContent = savedData.tierlockUsername.length + ' / 100';
+        }
         
         if (savedData.scheduleOption) {
             const radio = document.querySelector(`input[name="scheduleOption"][value="${savedData.scheduleOption}"]`);
@@ -147,8 +171,6 @@ window.addEventListener('DOMContentLoaded', () => {
                 if (savedData.scheduleOption === 'custom') {
                     const rangeDiv = document.getElementById('scheduleTimeRange');
                     if (rangeDiv) rangeDiv.style.display = 'block';
-                    
-                    // 🔥 RELLENADO: Separamos el string guardado para llenar los dos relojes
                     if (savedData.customSchedule && savedData.customSchedule.includes(' to ')) {
                         const parts = savedData.customSchedule.split(' to ');
                         document.getElementById('startTime').value = parts[0];
@@ -175,7 +197,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --- FUNCIONES DE MANAGERS (SIN CAMBIOS) ---
+// --- FUNCIONES DE MANAGERS ---
 
 function setupAddManagerButton() {
     const btnAddManager = document.getElementById('btnAddManager');

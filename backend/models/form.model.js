@@ -43,12 +43,16 @@ const formSchema = new mongoose.Schema({
             twitter: { type: String, default: '' },
             other: { type: String, default: '' },
 
-            // 🔥 NUEVOS CAMPOS ESTRUCTURADOS DE ROOM DETAILS
+            // CAMPOS ESTRUCTURADOS DE ROOM DETAILS
             cashoutLimit: { type: String, default: '' },
             minDeposit: { type: String, default: '' },
             scheduleOption: { type: String, default: '' }, // '24/7' o 'custom'
             customSchedule: { type: String, default: '' }, // "14:00 to 21:00"
             telegramPhone: { type: String, default: '' }, // 10 dígitos
+
+            // 🔥 NUEVOS CAMPOS: TIERLOCK INFORMATION
+            tierlockPhone: { type: String, default: '' },
+            tierlockUsername: { type: String, default: '' },
 
             // SECCIÓN: LOGOS
             logoOption: { 

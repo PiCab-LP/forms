@@ -238,6 +238,20 @@
             </div>
 
             <div class="section">
+                <h2>🔒 Tierlock Information</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Tierlock Phone Number</div>
+                        <div class="info-value" id="tierlockPhone">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Tierlock Username</div>
+                        <div class="info-value" id="tierlockUsername">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
                 <h2>🎨 Logo & Branding Identity</h2>
                 <div id="logoIdentitySection"></div>
             </div>
@@ -319,7 +333,7 @@
             document.getElementById('editCount').textContent = form.editCount;
             document.getElementById('currentVersion').textContent = form.currentVersion;
 
-            // 🔥 RENDER ROOM DETAILS
+            // RENDER ROOM DETAILS
             document.getElementById('cashoutLimit').textContent = p1.cashoutLimit ? `$${p1.cashoutLimit}` : 'Not set';
             document.getElementById('minDeposit').textContent = p1.minDeposit ? `$${p1.minDeposit}` : 'Not set';
             document.getElementById('telegramPhone').textContent = p1.telegramPhone ? `+1 ${p1.telegramPhone}` : 'No number provided';
@@ -331,13 +345,17 @@
                 scheduleBox.textContent = p1.customSchedule || 'No schedule provided';
             }
 
+            // 🔥 RENDER TIERLOCK INFORMATION
+            document.getElementById('tierlockPhone').textContent = p1.tierlockPhone ? `+1 ${p1.tierlockPhone}` : 'Not provided';
+            document.getElementById('tierlockUsername').textContent = p1.tierlockUsername || 'Not provided';
+
             // Logos
             const logoDiv = document.getElementById('logoIdentitySection');
             let logoHTML = '';
             if (p1.logoOption === 'has-logo') {
                 logoHTML = `<div class="logo-badge badge-has">Existing Logo Provided</div><div class="gallery-grid">${p1.uploadedLogos?.map(url => `<div class="gallery-item" onclick="window.open('${url}', '_blank')"><img src="${url}"></div>`).join('') || '<p>No images</p>'}</div>`;
             } else if (p1.logoOption === 'needs-logo') {
-                logoHTML = `<div class="logo-badge badge-needs">Needs Logo Creation</div><div class="info-item"><div class="info-label">Instructions</div><div class="info-value">${p1.designReferenceText || 'N/A'}</div></div><div class="gallery-grid">${p1.designReferenceImages?.map(url => `<div class="gallery-item" onclick="window.open('${url}', '_blank')"><img src="${url}"></div>`).join('') || '<p>No images</p>'}</div>`;
+                logoHTML = `<div class="logo-badge badge-needs">Needs Logo Creation</div><div class="info-item"><div class="info-label">Design Instructions</div><div class="info-value">${p1.designReferenceText || 'N/A'}</div></div><div class="gallery-grid">${p1.designReferenceImages?.map(url => `<div class="gallery-item" onclick="window.open('${url}', '_blank')"><img src="${url}"></div>`).join('') || '<p>No images</p>'}</div>`;
             } else {
                 logoHTML = '<p style="color: #999;">No logo preference selected.</p>';
             }
