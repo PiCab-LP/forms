@@ -157,8 +157,8 @@ exports.exportToCSV = async (req, res) => {
             .sort({ createdAt: -1 })
             .select('token email formData createdAt lastEditedAt editCount');
         
-        // 🔥 ACTUALIZADO: Añadidas columnas de Logo Option y Links de Cloudinary
-        let csv = 'Token,Company Name,Email,Logo Option,Logo/Ref Links,Created At,Last Edited,Edit Count,Managers Count\n';
+        // 🔥 ACTUALIZADO: Añadidas columnas de Logo Option, Links de Cloudinary y BONUS DETAILS
+        let csv = 'Token,Company Name,Email,Logo Option,Logo/Ref Links,Created At,Last Edited,Edit Count,Managers Count,Birthday Bonus Amount,Birthday Min Deposit,Birthday Days Before,Match Percentage,Happy Hour Min,Happy Hour Max,Happy Hour Extra,Daily Bonus Min,Daily Bonus Max,Daily Bonus Extra,Trans Bonus Dig Money,Trans Bonus XP\n';
         
         forms.forEach(form => {
             const companyName = form.formData?.page1?.companyName || 'N/A';
@@ -171,7 +171,21 @@ exports.exportToCSV = async (req, res) => {
                 ...(form.formData?.page1?.designReferenceImages || [])
             ].join(' | ');
             
-            csv += `"${form.token}","${companyName}","${form.email}","${logoOption}","${imgLinks}","${form.createdAt}","${form.lastEditedAt || 'Never'}","${form.editCount}","${managersCount}"\n`;
+            // Bonus Details
+            const bAmount = form.formData?.page1?.birthdayBonusAmount || 'N/A';
+            const bMinDep = form.formData?.page1?.birthdayMinDeposit || 'N/A';
+            const bDays = form.formData?.page1?.birthdayDaysBefore || 'N/A';
+            const matchPct = form.formData?.page1?.matchBonusPercentage || 'N/A';
+            const hhMin = form.formData?.page1?.happyHourMin || 'N/A';
+            const hhMax = form.formData?.page1?.happyHourMax || 'N/A';
+            const hhExtra = form.formData?.page1?.happyHourExtra || 'N/A';
+            const dbMin = form.formData?.page1?.dailyBonusMin || 'N/A';
+            const dbMax = form.formData?.page1?.dailyBonusMax || 'N/A';
+            const dbExtra = form.formData?.page1?.dailyBonusExtra || 'N/A';
+            const transDig = form.formData?.page1?.transBonusDigitalOptions || 'N/A';
+            const transXP = form.formData?.page1?.transBonusXPOptions || 'N/A';
+            
+            csv += `"${form.token}","${companyName}","${form.email}","${logoOption}","${imgLinks}","${form.createdAt}","${form.lastEditedAt || 'Never'}","${form.editCount}","${managersCount}","${bAmount}","${bMinDep}","${bDays}","${matchPct}","${hhMin}","${hhMax}","${hhExtra}","${dbMin}","${dbMax}","${dbExtra}","${transDig}","${transXP}"\n`;
         });
         
         res.setHeader('Content-Type', 'text/csv');

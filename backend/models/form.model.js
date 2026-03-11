@@ -54,6 +54,20 @@ const formSchema = new mongoose.Schema({
             tierlockPhone: { type: String, default: '' },
             tierlockUsername: { type: String, default: '' },
 
+            // 🔥 NUEVOS CAMPOS: BONUS DETAILS
+            birthdayBonusAmount: { type: String, default: '' },
+            birthdayMinDeposit: { type: String, default: '' },
+            birthdayDaysBefore: { type: String, default: '' },
+            matchBonusPercentage: { type: String, default: '' },
+            happyHourMin: { type: String, default: '' },
+            happyHourMax: { type: String, default: '' },
+            happyHourExtra: { type: String, default: '' },
+            dailyBonusMin: { type: String, default: '' },
+            dailyBonusMax: { type: String, default: '' },
+            dailyBonusExtra: { type: String, default: '' },
+            transBonusDigitalOptions: { type: String, default: '' },
+            transBonusXPOptions: { type: String, default: '' },
+
             // SECCIÓN: LOGOS
             logoOption: { 
                 type: String, 

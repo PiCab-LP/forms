@@ -252,6 +252,57 @@
             </div>
 
             <div class="section">
+                <h2>🎁 Bonus Details</h2>
+                <div class="info-grid">
+                    <!-- Birthday Bonus -->
+                    <div class="info-item">
+                        <div class="info-label">Birthday Bonus Amount</div>
+                        <div class="info-value" id="birthdayBonusAmount">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Birthday Min Deposit</div>
+                        <div class="info-value" id="birthdayMinDeposit">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Days Before Birthday</div>
+                        <div class="info-value" id="birthdayDaysBefore">-</div>
+                    </div>
+                    <!-- Match Bonus -->
+                    <div class="info-item">
+                        <div class="info-label">Match Percentage</div>
+                        <div class="info-value" id="matchBonusPercentage">-</div>
+                    </div>
+                    <!-- Happy Hour Bonus -->
+                    <div class="info-item">
+                        <div class="info-label">Happy Hour Range</div>
+                        <div class="info-value" id="happyHourRange">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Happy Hour Extra</div>
+                        <div class="info-value" id="happyHourExtra">-</div>
+                    </div>
+                    <!-- Daily Bonus -->
+                    <div class="info-item">
+                        <div class="info-label">Daily Bonus Range</div>
+                        <div class="info-value" id="dailyBonusRange">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Daily Bonus Extra</div>
+                        <div class="info-value" id="dailyBonusExtra">-</div>
+                    </div>
+                    <!-- Transaction Bonuses -->
+                    <div class="info-item">
+                        <div class="info-label">Trans. Bonus (Dig. Money)</div>
+                        <div class="info-value" id="transBonusDigitalOptions">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Trans. Bonus (XP)</div>
+                        <div class="info-value" id="transBonusXPOptions">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
                 <h2>🎨 Logo & Branding Identity</h2>
                 <div id="logoIdentitySection"></div>
             </div>
@@ -348,6 +399,18 @@
             // 🔥 RENDER TIERLOCK INFORMATION
             document.getElementById('tierlockPhone').textContent = p1.tierlockPhone ? `+1 ${p1.tierlockPhone}` : 'Not provided';
             document.getElementById('tierlockUsername').textContent = p1.tierlockUsername || 'Not provided';
+
+            // 🔥 RENDER BONUS DETAILS
+            document.getElementById('birthdayBonusAmount').textContent = p1.birthdayBonusAmount ? `$${p1.birthdayBonusAmount}` : 'Not set';
+            document.getElementById('birthdayMinDeposit').textContent = p1.birthdayMinDeposit ? `$${p1.birthdayMinDeposit}` : 'Not set';
+            document.getElementById('birthdayDaysBefore').textContent = p1.birthdayDaysBefore ? `${p1.birthdayDaysBefore} days` : 'Not set';
+            document.getElementById('matchBonusPercentage').textContent = p1.matchBonusPercentage ? `${p1.matchBonusPercentage}%` : 'Not set';
+            document.getElementById('happyHourRange').textContent = (p1.happyHourMin && p1.happyHourMax) ? `$${p1.happyHourMin} - $${p1.happyHourMax}` : 'Not set';
+            document.getElementById('happyHourExtra').textContent = p1.happyHourExtra ? `+$${p1.happyHourExtra}` : 'Not set';
+            document.getElementById('dailyBonusRange').textContent = (p1.dailyBonusMin && p1.dailyBonusMax) ? `$${p1.dailyBonusMin} - $${p1.dailyBonusMax}` : 'Not set';
+            document.getElementById('dailyBonusExtra').textContent = p1.dailyBonusExtra ? `+$${p1.dailyBonusExtra}` : 'Not set';
+            document.getElementById('transBonusDigitalOptions').textContent = p1.transBonusDigitalOptions === 'yes' ? 'Yes' : 'No';
+            document.getElementById('transBonusXPOptions').textContent = p1.transBonusXPOptions === 'yes' ? 'Yes' : 'No';
 
             // Logos
             const logoDiv = document.getElementById('logoIdentitySection');

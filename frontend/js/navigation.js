@@ -23,36 +23,61 @@ if (document.getElementById('btnNext')) {
         const startTime = document.getElementById('startTime').value;
         const endTime = document.getElementById('endTime').value;
 
-        // Validar montos operativos
-        if (!cashoutLimit || !minDeposit) {
-            alert("⚠️ Please enter both Cashout Limit and Minimum Deposit.");
-            return;
-        }
+        // 🔥 NUEVOS: Captura de Bonus Details
+        const birthdayBonusAmount = document.getElementById('birthdayBonusAmount').value;
+        const birthdayMinDeposit = document.getElementById('birthdayMinDeposit').value;
+        const birthdayDaysBefore = document.getElementById('birthdayDaysBefore').value;
+        const matchBonusPercentage = document.getElementById('matchBonusPercentage').value;
+        const happyHourMin = document.getElementById('happyHourMin').value;
+        const happyHourMax = document.getElementById('happyHourMax').value;
+        const happyHourExtra = document.getElementById('happyHourExtra').value;
+        const dailyBonusMin = document.getElementById('dailyBonusMin').value;
+        const dailyBonusMax = document.getElementById('dailyBonusMax').value;
+        const dailyBonusExtra = document.getElementById('dailyBonusExtra').value;
+        const transBonusDigitalOptions = document.querySelector('input[name="transBonusDigitalOptions"]:checked')?.value;
+        const transBonusXPOptions = document.querySelector('input[name="transBonusXPOptions"]:checked')?.value;
 
         // Validar Tierlock (Obligatorios)
         if (tierlockPhone.length !== 10) {
-            alert("⚠️ Please enter a valid 10-digit USA phone number for Tierlock.");
-            return;
+            return showError("Please enter a valid 10-digit USA phone number for Tierlock.", "tierlockPhone");
         }
         if (!tierlockUsername) {
-            alert("⚠️ Please enter your Tierlock username.");
-            return;
+            return showError("Please enter your Tierlock username.", "tierlockUsername");
+        }
+
+        // Validar montos operativos (Room Details)
+        if (!cashoutLimit) {
+            return showError("Please enter the Cashout Daily Limit.", "cashoutLimit");
+        }
+        if (!minDeposit) {
+            return showError("Please enter the Minimum Deposit.", "minDeposit");
         }
 
         // Validar Horario
         if (!scheduleOption) {
-            alert("⚠️ Please select a cashout schedule option (24/7 or Specific).");
-            return;
+            return showError("Please select a cashout schedule option (24/7 or Specific).", "cashoutLimit");
         }
         if (scheduleOption === 'custom' && (!startTime || !endTime)) {
-            alert("⚠️ Please select both Start and End times for your schedule.");
-            return;
+            return showError("Please select both Start and End times for your schedule.", "startTime");
         }
 
         // Validar Telegram
         if (telegramPhone.length !== 10) {
-            alert("⚠️ Please enter a valid 10-digit USA phone number for Telegram.");
-            return;
+            return showError("Please enter a valid 10-digit USA phone number for Telegram.", "telegramPhone");
+        }
+        
+        // Validar Bonus Details
+        if (!birthdayBonusAmount || !birthdayMinDeposit || !birthdayDaysBefore) {
+            return showError("Please complete all fields for the Birthday Bonus.", "birthdayBonusAmount");
+        }
+        if (!matchBonusPercentage) {
+            return showError("Please enter the Match Bonus Percentage.", "matchBonusPercentage");
+        }
+        if (!happyHourMin || !happyHourMax || !happyHourExtra) {
+            return showError("Please complete all fields for the Happy Hour Bonus.", "happyHourMin");
+        }
+        if (!dailyBonusMin || !dailyBonusMax || !dailyBonusExtra) {
+            return showError("Please complete all fields for the Daily Bonus.", "dailyBonusMin");
         }
         
         console.log('✅ Todas las validaciones pasaron');
@@ -65,7 +90,7 @@ if (document.getElementById('btnNext')) {
         
         localStorage.setItem('gameroomName', companyName);
         
-        // 3. CAPTURA DE DATOS FINAL (Incluyendo los campos de Tierlock)
+        // 3. CAPTURA DE DATOS FINAL (Incluyendo los campos de Tierlock y Bonus Details)
         const page1Data = {
             companyName: companyName,
             facebook: document.getElementById('facebook').value.trim(),
@@ -79,7 +104,20 @@ if (document.getElementById('btnNext')) {
             telegramPhone: telegramPhone,
             // 🔥 GUARDADO DE TIERLOCK
             tierlockPhone: tierlockPhone,
-            tierlockUsername: tierlockUsername
+            tierlockUsername: tierlockUsername,
+            // 🔥 GUARDADO DE BONUS DETAILS
+            birthdayBonusAmount: birthdayBonusAmount,
+            birthdayMinDeposit: birthdayMinDeposit,
+            birthdayDaysBefore: birthdayDaysBefore,
+            matchBonusPercentage: matchBonusPercentage,
+            happyHourMin: happyHourMin,
+            happyHourMax: happyHourMax,
+            happyHourExtra: happyHourExtra,
+            dailyBonusMin: dailyBonusMin,
+            dailyBonusMax: dailyBonusMax,
+            dailyBonusExtra: dailyBonusExtra,
+            transBonusDigitalOptions: transBonusDigitalOptions,
+            transBonusXPOptions: transBonusXPOptions
         };
         
         console.log('📦 OBJETO COMPLETO page1Data:', JSON.stringify(page1Data, null, 2));
@@ -88,7 +126,7 @@ if (document.getElementById('btnNext')) {
         
         // Ir a página 2
         const editToken = localStorage.getItem('editToken');
-        const nextPage = editToken ? `page2?token=${editToken}` : 'page2';
+        const nextPage = editToken ? `page2.html?token=${editToken}` : 'page2.html';
         
         console.log('🚀 Navegando a:', nextPage);
         window.location.href = nextPage;

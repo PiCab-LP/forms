@@ -6,18 +6,19 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1a0533 0%, #2d0a4e 50%, #1a0533 100%);
     min-height: 100vh;
     padding: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
+    color: #2d2d3d;
 }
 
 .form-container {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    background: #ffffff;
+    border-radius: 24px;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
     max-width: 700px;
     width: 100%;
     padding: 40px;
@@ -29,6 +30,7 @@ body {
         opacity: 0;
         transform: translateY(20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -39,7 +41,7 @@ body {
 .progress-bar {
     width: 100%;
     height: 8px;
-    background: #e0e0e0;
+    background: #e8e0f0;
     border-radius: 10px;
     margin-bottom: 30px;
     overflow: hidden;
@@ -47,7 +49,7 @@ body {
 
 .progress {
     height: 100%;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(90deg, #7b2ff2, #d500ba);
     transition: width 0.3s ease;
     border-radius: 10px;
 }
@@ -55,58 +57,62 @@ body {
 /* Titles */
 .main-title {
     font-size: 28px;
-    color: #333;
+    color: #2d0a4e;
     margin-bottom: 30px;
     line-height: 1.4;
+    text-align: center;
 }
 
 .editable-company {
-    color: #667eea;
-    border-bottom: 2px dashed #667eea;
+    color: #d500ba;
+    border-bottom: 2px dashed #d500ba;
     cursor: pointer;
     transition: all 0.3s ease;
     padding: 2px 5px;
 }
 
 .editable-company:hover {
-    background: #f0f0f0;
+    background: rgba(213, 0, 186, 0.08);
 }
 
 .editable-company:focus {
     outline: none;
-    background: #f8f8ff;
-    border-bottom: 2px solid #667eea;
+    background: rgba(213, 0, 186, 0.12);
+    border-bottom: 2px solid #d500ba;
 }
 
 h2 {
     font-size: 24px;
-    color: #333;
+    color: #2d0a4e;
     margin-bottom: 10px;
+    text-align: center;
 }
 
 h3 {
     font-size: 18px;
-    color: #667eea;
+    color: #7b2ff2;
     margin-bottom: 20px;
     padding-bottom: 10px;
-    border-bottom: 2px solid #e0e0e0;
+    border-bottom: 2px solid #ede8f5;
 }
 
 .subtitle {
-    color: #666;
+    color: #6c5b7b;
     font-size: 16px;
     margin-bottom: 30px;
+    text-align: center;
 }
 
 /* Form Groups */
 .form-group {
     margin-bottom: 25px;
+    position: relative;
 }
 
 .form-group label {
     display: block;
     font-weight: 600;
-    color: #333;
+    color: #2d2d3d;
     margin-bottom: 8px;
     font-size: 14px;
 }
@@ -116,8 +122,10 @@ h3 {
 .form-group textarea {
     width: 100%;
     padding: 12px 15px;
-    border: 2px solid #e0e0e0;
-    border-radius: 8px;
+    border: 2px solid #e0d6ee;
+    background: #faf8fd;
+    color: #2d2d3d;
+    border-radius: 10px;
     font-size: 15px;
     transition: all 0.3s ease;
     font-family: inherit;
@@ -127,28 +135,38 @@ h3 {
 .form-group select:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    border-color: #7b2ff2;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(123, 47, 242, 0.12);
 }
 
 .form-group input::placeholder {
-    color: #999;
+    color: #a99bc0;
 }
 
 .input-help {
     display: block;
     margin-top: 5px;
     font-size: 12px;
-    color: #999;
+    color: #8a7a9e;
+    min-height: 16px;
+}
+
+.input-help.error {
+    color: #dc3545 !important;
+}
+
+.input-help.success {
+    color: #28a745 !important;
 }
 
 /* Manager Blocks */
 .manager-block {
-    background: #f8f9fa;
+    background: #f5f0fb;
     padding: 25px;
-    border-radius: 10px;
+    border-radius: 16px;
     margin-bottom: 25px;
-    border: 2px solid #e0e0e0;
+    border: 1px solid #e0d6ee;
     position: relative;
 }
 
@@ -160,18 +178,19 @@ h3 {
     position: absolute;
     top: 15px;
     right: 15px;
-    background: #dc3545;
-    color: white;
-    border: none;
+    background: #fff0f2;
+    color: #dc3545;
+    border: 1px solid #f5c6cb;
     padding: 8px 15px;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
     transition: all 0.3s ease;
 }
 
 .btn-remove-manager:hover {
-    background: #c82333;
+    background: #dc3545;
+    color: white;
     transform: scale(1.05);
 }
 
@@ -179,10 +198,10 @@ h3 {
 .btn-add-manager {
     width: 100%;
     padding: 15px;
-    background: white;
-    color: #667eea;
-    border: 2px dashed #667eea;
-    border-radius: 8px;
+    background: #faf8fd;
+    color: #7b2ff2;
+    border: 2px dashed #c9b8e8;
+    border-radius: 12px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
@@ -191,9 +210,8 @@ h3 {
 }
 
 .btn-add-manager:hover {
-    background: #f8f8ff;
-    border-color: #764ba2;
-    color: #764ba2;
+    background: #f0eaf9;
+    border-color: #7b2ff2;
 }
 
 .btn-add-manager:disabled {
@@ -211,9 +229,9 @@ h3 {
 .btn-submit,
 .btn-back {
     flex: 1;
-    padding: 15px 30px;
+    padding: 16px 30px;
     border: none;
-    border-radius: 8px;
+    border-radius: 50px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
@@ -222,32 +240,34 @@ h3 {
 
 .btn-next,
 .btn-submit {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(90deg, #7b2ff2, #d500ba);
     color: white;
+    box-shadow: 0 4px 15px rgba(123, 47, 242, 0.3);
 }
 
 .btn-next:hover,
 .btn-submit:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px rgba(123, 47, 242, 0.45);
 }
 
 .btn-back {
-    background: #6c757d;
-    color: white;
+    background: #f5f0fb;
+    color: #2d0a4e;
+    border: 1px solid #e0d6ee;
 }
 
 .btn-back:hover {
-    background: #5a6268;
+    background: #ede5f8;
     transform: translateY(-2px);
 }
 
 /* Error Messages */
 .error-message {
-    background: #f8d7da;
-    color: #721c24;
+    background: #fff0f2;
+    color: #dc3545;
     padding: 12px 15px;
-    border-radius: 8px;
+    border-radius: 10px;
     margin-bottom: 20px;
     border-left: 4px solid #dc3545;
 }
@@ -259,7 +279,7 @@ h3 {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(26, 5, 51, 0.8);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -275,20 +295,22 @@ h3 {
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
 }
 
 .modal-content {
-    background: white;
+    background: #ffffff;
     padding: 40px;
-    border-radius: 12px;
+    border-radius: 24px;
     max-width: 600px;
     width: 90%;
     max-height: 90vh;
     overflow-y: auto;
     animation: slideUp 0.3s ease;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
 }
 
 @keyframes slideUp {
@@ -296,6 +318,7 @@ h3 {
         opacity: 0;
         transform: translateY(50px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -309,20 +332,21 @@ h3 {
 }
 
 .edit-link-container {
-    background: #f8f9fa;
+    background: #f5f0fb;
     padding: 20px;
-    border-radius: 8px;
+    border-radius: 12px;
     margin: 25px 0;
+    border: 1px solid #e0d6ee;
 }
 
 .edit-link-container p {
     margin-bottom: 10px;
-    color: #333;
+    color: #2d2d3d;
 }
 
 .help-text {
     font-size: 14px;
-    color: #666;
+    color: #6c5b7b;
     margin-bottom: 10px;
 }
 
@@ -334,25 +358,27 @@ h3 {
 .link-box input {
     flex: 1;
     padding: 12px;
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
+    border: 2px solid #e0d6ee;
+    background: #ffffff;
+    color: #7b2ff2;
+    border-radius: 10px;
     font-size: 14px;
     font-family: monospace;
 }
 
 .btn-copy {
     padding: 12px 20px;
-    background: #667eea;
+    background: #7b2ff2;
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 10px;
     cursor: pointer;
     font-weight: 600;
     transition: all 0.3s ease;
 }
 
 .btn-copy:hover {
-    background: #764ba2;
+    background: #6620d4;
 }
 
 .modal-actions {
@@ -366,7 +392,7 @@ h3 {
     flex: 1;
     padding: 15px;
     border: none;
-    border-radius: 8px;
+    border-radius: 50px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
@@ -376,19 +402,23 @@ h3 {
 .btn-download {
     background: #28a745;
     color: white;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
 }
 
 .btn-download:hover {
     background: #218838;
+    transform: translateY(-2px);
 }
 
 .btn-close {
-    background: #6c757d;
-    color: white;
+    background: #f5f0fb;
+    color: #2d0a4e;
+    border: 1px solid #e0d6ee;
 }
 
 .btn-close:hover {
-    background: #5a6268;
+    background: #ede5f8;
+    transform: translateY(-2px);
 }
 
 /* Edit Mode Banner */
@@ -407,27 +437,27 @@ h3 {
     .form-container {
         padding: 25px;
     }
-    
+
     .main-title {
         font-size: 22px;
     }
-    
+
     h2 {
         font-size: 20px;
     }
-    
+
     .form-actions {
         flex-direction: column;
     }
-    
+
     .modal-content {
         padding: 25px;
     }
-    
+
     .link-box {
         flex-direction: column;
     }
-    
+
     .modal-actions {
         flex-direction: column;
     }
@@ -444,29 +474,6 @@ h3 {
     height: auto;
 }
 
-/* Centrar títulos */
-.main-title {
-    font-size: 28px;
-    color: #333;
-    margin-bottom: 30px;
-    line-height: 1.4;
-    text-align: center;
-}
-
-h2 {
-    font-size: 24px;
-    color: #333;
-    margin-bottom: 10px;
-    text-align: center;
-}
-
-.subtitle {
-    color: #666;
-    font-size: 16px;
-    margin-bottom: 30px;
-    text-align: center;
-}
-
 /* Estilos para mensajes de validación en tiempo real */
 .input-help.error {
     color: #dc3545 !important;
@@ -477,19 +484,15 @@ h2 {
 }
 
 /* Asegurar que el input-help siempre esté debajo del input */
-.form-group {
-    position: relative;
-}
-
 .form-group .input-help {
     display: block;
     margin-top: 5px;
     font-size: 12px;
-    color: #999;
-    min-height: 16px; /* Reservar espacio para evitar saltos */
+    color: #8a7a9e;
+    min-height: 16px;
 }
 
-/* Para los inputs con password, ajustar padding si tienen botón de mostrar/ocultar */
+/* Para los inputs con password */
 .form-group input[type="password"],
 .form-group input[type="text"] {
     width: 100%;

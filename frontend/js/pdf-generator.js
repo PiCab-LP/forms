@@ -86,8 +86,76 @@ function generatePDF(formData) {
     
     yPosition += 10;
     
+    // 🔥 NUEVA SECCIÓN: Room & Tierlock Details
+    doc.setFontSize(14);
+    doc.setTextColor(51, 51, 51);
+    doc.text('Operational & Tierlock Info', 20, yPosition);
+    
+    yPosition += 8;
+    doc.setFontSize(10);
+    doc.setTextColor(51, 51, 51);
+    
+    if (formData.page1) {
+        const opFields = [
+            { label: 'Daily Cashout Limit:', value: formData.page1.cashoutLimit ? `$${formData.page1.cashoutLimit}` : 'N/A' },
+            { label: 'Minimum Deposit:', value: formData.page1.minDeposit ? `$${formData.page1.minDeposit}` : 'N/A' },
+            { label: 'Cashout Schedule:', value: formData.page1.scheduleOption === '24/7' ? '24/7 Available' : (formData.page1.customSchedule || 'N/A') },
+            { label: 'Telegram Support:', value: formData.page1.telegramPhone ? `+1 ${formData.page1.telegramPhone}` : 'N/A' },
+            { label: 'Tierlock Phone:', value: formData.page1.tierlockPhone ? `+1 ${formData.page1.tierlockPhone}` : 'N/A' },
+            { label: 'Tierlock User:', value: formData.page1.tierlockUsername || 'N/A' }
+        ];
+
+        opFields.forEach(field => {
+            doc.text(field.label, 25, yPosition);
+            doc.setTextColor(102, 126, 234);
+            doc.text(field.value, 65, yPosition);
+            doc.setTextColor(51, 51, 51);
+            yPosition += 6;
+        });
+    }
+
+    yPosition += 10;
+
+    // 🔥 NUEVA SECCIÓN: Bonus Details
+    doc.setFontSize(14);
+    doc.setTextColor(51, 51, 51);
+    doc.text('Bonus Details', 20, yPosition);
+    
+    yPosition += 8;
+    doc.setFontSize(10);
+    doc.setTextColor(51, 51, 51);
+    
+    if (formData.page1) {
+        const bonusFields = [
+            { label: 'Birthday Bonus:', value: formData.page1.birthdayBonusAmount ? `$${formData.page1.birthdayBonusAmount} (Min: $${formData.page1.birthdayMinDeposit}, Days: ${formData.page1.birthdayDaysBefore})` : 'N/A' },
+            { label: 'Match Bonus:', value: formData.page1.matchBonusPercentage ? `${formData.page1.matchBonusPercentage}%` : 'N/A' },
+            { label: 'Happy Hour:', value: (formData.page1.happyHourMin && formData.page1.happyHourMax) ? `$${formData.page1.happyHourMin}-$${formData.page1.happyHourMax} (+ $${formData.page1.happyHourExtra})` : 'N/A' },
+            { label: 'Daily Bonus:', value: (formData.page1.dailyBonusMin && formData.page1.dailyBonusMax) ? `$${formData.page1.dailyBonusMin}-$${formData.page1.dailyBonusMax} (+ $${formData.page1.dailyBonusExtra})` : 'N/A' },
+            { label: 'Trans. (Dig. Money):', value: formData.page1.transBonusDigitalOptions === 'yes' ? 'Yes' : 'No' },
+            { label: 'Trans. (XP):', value: formData.page1.transBonusXPOptions === 'yes' ? 'Yes' : 'No' }
+        ];
+
+        bonusFields.forEach(field => {
+            doc.text(field.label, 25, yPosition);
+            doc.setTextColor(102, 126, 234);
+            doc.text(field.value, 65, yPosition);
+            doc.setTextColor(51, 51, 51);
+            yPosition += 6;
+        });
+    }
+
+    // Check page break before Socials
+    if (yPosition > 250) {
+        doc.addPage();
+        yPosition = 20;
+    } else {
+        yPosition += 10;
+    }
+    
     // Social Networks
     doc.setFontSize(14);
+    doc.setTextColor(51, 51, 51);
+    doc.text('Social Networks', 20, yPosition);
     doc.setTextColor(51, 51, 51);
     doc.text('Social Networks', 20, yPosition);
     

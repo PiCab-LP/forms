@@ -8,6 +8,78 @@ function isValidURL(string) {
     }
 }
 
+// Sistema de notificaciones Toast dinámico
+function showToast(message, type = 'error') {
+    // Buscar si ya existe el contenedor de toasts
+    let toastContainer = document.getElementById('toastDisplay');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastDisplay';
+        toastContainer.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        `;
+        document.body.appendChild(toastContainer);
+    }
+
+    // Crear el toast individual
+    const toast = document.createElement('div');
+    const bgColor = type === 'error' ? '#ffeeee' : '#e0ffe4';
+    const borderColor = type === 'error' ? '#ffcdd2' : '#c8e6c9';
+    const icon = type === 'error' ? '⚠️' : '✅';
+    const textColor = type === 'error' ? '#c62828' : '#2e7d32';
+
+    toast.style.cssText = `
+        background: ${bgColor};
+        color: ${textColor};
+        border: 1px solid ${borderColor};
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transform: translateX(120%);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    `;
+    toast.innerHTML = `<span style="font-size: 18px;">${icon}</span> ${message}`;
+
+    toastContainer.appendChild(toast);
+
+    // Animar entrada
+    requestAnimationFrame(() => {
+        toast.style.transform = 'translateX(0)';
+    });
+
+    // Animar salida y remover
+    setTimeout(() => {
+        toast.style.transform = 'translateX(120%)';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// Función auxiliar global para mostrar toast de error y enfocar elemento
+function showError(message, elementId) {
+    showToast(message, 'error');
+    const element = document.getElementById(elementId);
+    if (element) {
+        // Scroll suave hacia la sección del input
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Efecto visual de resaltado
+        element.style.transition = 'box-shadow 0.3s';
+        element.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.3)';
+        setTimeout(() => element.style.boxShadow = 'none', 2000);
+    }
+    return false;
+}
+
 // Validar que al menos una red social esté llena Y sea una URL válida
 function validateSocialNetworks() {
     const facebook = document.getElementById('facebook').value.trim();
@@ -15,41 +87,28 @@ function validateSocialNetworks() {
     const twitter = document.getElementById('twitter').value.trim();
     const other = document.getElementById('other').value.trim();
     
-    const errorDiv = document.getElementById('socialNetworkError');
-    
     // Verificar que al menos una esté llena
     if (!facebook && !instagram && !twitter && !other) {
-        errorDiv.textContent = '⚠️ Please complete at least one social network to continue';
-        errorDiv.style.display = 'block';
-        return false;
+        return showError('Please complete at least one social network to continue.', 'facebook');
     }
     
     // Validar que las que estén llenas sean URLs válidas
     if (facebook && !isValidURL(facebook)) {
-        errorDiv.textContent = '⚠️ Facebook must be a valid URL (e.g., https://facebook.com/yourpage)';
-        errorDiv.style.display = 'block';
-        return false;
+        return showError('Facebook must be a valid URL (e.g., https://facebook.com/yourpage)', 'facebook');
     }
     
     if (instagram && !isValidURL(instagram)) {
-        errorDiv.textContent = '⚠️ Instagram must be a valid URL (e.g., https://instagram.com/yourpage)';
-        errorDiv.style.display = 'block';
-        return false;
+        return showError('Instagram must be a valid URL (e.g., https://instagram.com/yourpage)', 'instagram');
     }
     
     if (twitter && !isValidURL(twitter)) {
-        errorDiv.textContent = '⚠️ X (Twitter) must be a valid URL (e.g., https://x.com/yourpage)';
-        errorDiv.style.display = 'block';
-        return false;
+        return showError('X (Twitter) must be a valid URL (e.g., https://x.com/yourpage)', 'twitter');
     }
     
     if (other && !isValidURL(other)) {
-        errorDiv.textContent = '⚠️ Other must be a valid URL (e.g., https://yourwebsite.com)';
-        errorDiv.style.display = 'block';
-        return false;
+        return showError('Other must be a valid URL (e.g., https://yourwebsite.com)', 'other');
     }
     
-    errorDiv.style.display = 'none';
     return true;
 }
 
