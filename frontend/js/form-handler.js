@@ -119,6 +119,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             p1.scheduleOption = savedP1.scheduleOption;
             p1.customSchedule = savedP1.customSchedule;
             p1.telegramPhone = savedP1.telegramPhone;
+            p1.tierlockPhone = savedP1.tierlockPhone;
+            p1.tierlockUsername = savedP1.tierlockUsername;
+            
+            p1.birthdayBonusAmount = savedP1.birthdayBonusAmount;
+            p1.birthdayMinDeposit = savedP1.birthdayMinDeposit;
+            p1.birthdayDaysBefore = savedP1.birthdayDaysBefore;
+            p1.matchBonusPercentage = savedP1.matchBonusPercentage;
+            p1.happyHourMin = savedP1.happyHourMin;
+            p1.happyHourMax = savedP1.happyHourMax;
+            p1.happyHourExtra = savedP1.happyHourExtra;
+            p1.dailyBonusMin = savedP1.dailyBonusMin;
+            p1.dailyBonusMax = savedP1.dailyBonusMax;
+            p1.dailyBonusExtra = savedP1.dailyBonusExtra;
+            p1.transBonusDigitalOptions = savedP1.transBonusDigitalOptions;
+            p1.transBonusXPOptions = savedP1.transBonusXPOptions;
 
             const token = localStorage.getItem('editToken');
             await submitForm(allFormData, token);
@@ -208,6 +223,41 @@ function fillFormFields(data) {
         if (p1.telegramPhone) {
             document.getElementById('telegramPhone').value = p1.telegramPhone;
             document.getElementById('phoneCount').textContent = p1.telegramPhone.length;
+        }
+
+        // 🔥 RELLENADO DE TIERLOCK INFORMATION
+        if (p1.tierlockPhone) {
+            const tlEl = document.getElementById('tierlockPhone');
+            if (tlEl) {
+                tlEl.value = p1.tierlockPhone;
+                const countEl = document.getElementById('tierlockPhoneCount');
+                if (countEl) countEl.textContent = `Digits: ${p1.tierlockPhone.length} / 10`;
+            }
+        }
+        if (p1.tierlockUsername) {
+            const tuEl = document.getElementById('tierlockUsername');
+            if (tuEl) tuEl.value = p1.tierlockUsername;
+        }
+
+        // 🔥 RELLENADO DE BONUS DETAILS
+        if (p1.birthdayBonusAmount) document.getElementById('birthdayBonusAmount').value = p1.birthdayBonusAmount;
+        if (p1.birthdayMinDeposit) document.getElementById('birthdayMinDeposit').value = p1.birthdayMinDeposit;
+        if (p1.birthdayDaysBefore) document.getElementById('birthdayDaysBefore').value = p1.birthdayDaysBefore;
+        if (p1.matchBonusPercentage) document.getElementById('matchBonusPercentage').value = p1.matchBonusPercentage;
+        if (p1.happyHourMin) document.getElementById('happyHourMin').value = p1.happyHourMin;
+        if (p1.happyHourMax) document.getElementById('happyHourMax').value = p1.happyHourMax;
+        if (p1.happyHourExtra) document.getElementById('happyHourExtra').value = p1.happyHourExtra;
+        if (p1.dailyBonusMin) document.getElementById('dailyBonusMin').value = p1.dailyBonusMin;
+        if (p1.dailyBonusMax) document.getElementById('dailyBonusMax').value = p1.dailyBonusMax;
+        if (p1.dailyBonusExtra) document.getElementById('dailyBonusExtra').value = p1.dailyBonusExtra;
+        
+        if (p1.transBonusDigitalOptions) {
+            const digitalRadio = document.querySelector(`input[name="transBonusDigitalOptions"][value="${p1.transBonusDigitalOptions}"]`);
+            if (digitalRadio) digitalRadio.checked = true;
+        }
+        if (p1.transBonusXPOptions) {
+            const xpRadio = document.querySelector(`input[name="transBonusXPOptions"][value="${p1.transBonusXPOptions}"]`);
+            if (xpRadio) xpRadio.checked = true;
         }
 
         if (p1.scheduleOption) {
