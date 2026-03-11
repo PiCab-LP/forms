@@ -109,9 +109,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!allFormData.page1) allFormData.page1 = {};
             const p1 = allFormData.page1;
             
-            p1.companyName = localStorage.getItem('gameroomName');
-            p1.logoOption = localStorage.getItem('logoOption');
-            p1.designReferenceText = localStorage.getItem('designReferenceText');
+            p1.companyName = localStorage.getItem('gameroomName') || savedP1.companyName;
+            p1.logoOption = localStorage.getItem('logoOption') || savedP1.logoOption;
+            p1.designReferenceText = localStorage.getItem('designReferenceText') || savedP1.designReferenceText;
             
             // 🔥 Aseguramos que los nuevos campos de Room Details viajen al servidor
             p1.cashoutLimit = savedP1.cashoutLimit;
@@ -189,6 +189,11 @@ async function loadExistingFormData(token) {
 function fillFormFields(data) {
     const isIndex = window.location.pathname.includes('index.html') || window.location.pathname.endsWith('/');
     const p1 = data.page1 || {};
+
+    // 🔥 PRESERVAR EN LOCALSTORAGE PARA NO BORRAR EN EDICIÓN
+    if (p1.gameroomName || p1.companyName) localStorage.setItem('gameroomName', p1.companyName || p1.gameroomName);
+    if (p1.logoOption) localStorage.setItem('logoOption', p1.logoOption);
+    if (p1.designReferenceText) localStorage.setItem('designReferenceText', p1.designReferenceText);
 
     if (isIndex) {
         if (p1.companyName) document.getElementById('companyName').textContent = p1.companyName;
