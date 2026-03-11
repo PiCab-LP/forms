@@ -211,7 +211,14 @@ function fillFormFields(data) {
     if (p1.designReferenceText) localStorage.setItem('designReferenceText', p1.designReferenceText);
 
     if (isIndex) {
-        if (p1.companyName) document.getElementById('companyName').textContent = p1.companyName;
+        if (p1.companyName) {
+            document.getElementById('companyName').textContent = p1.companyName;
+            const linkEl = document.getElementById('generatedLink');
+            if (linkEl) {
+                const formattedName = p1.companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                linkEl.textContent = formattedName ? `www.${formattedName}.wysaro.com` : 'www.yourbrand.wysaro.com';
+            }
+        }
         ['facebook', 'instagram', 'twitter', 'other'].forEach(f => {
             const el = document.getElementById(f);
             if (el) el.value = p1[f] || '';
@@ -231,7 +238,7 @@ function fillFormFields(data) {
             if (tlEl) {
                 tlEl.value = p1.tierlockPhone;
                 const countEl = document.getElementById('tierlockPhoneCount');
-                if (countEl) countEl.textContent = `Digits: ${p1.tierlockPhone.length} / 10`;
+                if (countEl) countEl.textContent = p1.tierlockPhone.length;
             }
         }
         if (p1.tierlockUsername) {
