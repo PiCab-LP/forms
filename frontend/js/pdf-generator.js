@@ -31,29 +31,29 @@ function generatePDF(formData) {
     doc.setLineWidth(0.5);
     doc.line(20, yPosition, 190, yPosition);
     
-    yPosition += 15;
+    yPosition += 10;
     
     // Company Information
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     doc.setTextColor(51, 51, 51);
     doc.text('Company Information', 20, yPosition);
     
-    yPosition += 8;
-    doc.setFontSize(11);
+    yPosition += 6;
+    doc.setFontSize(10);
     doc.setTextColor(102, 102, 102);
     doc.text('Company Name:', 25, yPosition);
     doc.setTextColor(102, 126, 234);
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.text(formData.page1?.companyName || 'N/A', 60, yPosition);
     
-    yPosition += 12;
+    yPosition += 8;
 
     // 🔥 NUEVA SECCIÓN: Logo Identity
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     doc.setTextColor(51, 51, 51);
     doc.text('Logo Identity', 20, yPosition);
     
-    yPosition += 8;
+    yPosition += 6;
     doc.setFontSize(10);
     const logoOpt = formData.page1?.logoOption;
     let logoStatus = 'Not specified';
@@ -71,7 +71,7 @@ function generatePDF(formData) {
     
     // Si pidió diseño, agregar las instrucciones de texto
     if (logoOpt === 'needs-logo' && formData.page1?.designReferenceText) {
-        yPosition += 7;
+        yPosition += 6;
         doc.setTextColor(102, 102, 102);
         doc.text('Instructions:', 25, yPosition);
         doc.setTextColor(51, 51, 51);
@@ -79,20 +79,20 @@ function generatePDF(formData) {
         // Ajuste de texto automático por si la descripción es muy larga
         const splitText = doc.splitTextToSize(formData.page1.designReferenceText, 130);
         doc.text(splitText, 50, yPosition);
-        yPosition += (splitText.length * 5); 
+        yPosition += (splitText.length * 4.5); 
     } else {
-        yPosition += 8;
+        yPosition += 6;
     }
     
-    yPosition += 10;
+    yPosition += 8;
     
     // 🔥 NUEVA SECCIÓN: Room & Tierlock Details
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     doc.setTextColor(51, 51, 51);
     doc.text('Operational & Tierlock Info', 20, yPosition);
     
-    yPosition += 8;
-    doc.setFontSize(10);
+    yPosition += 6;
+    doc.setFontSize(9.5);
     doc.setTextColor(51, 51, 51);
     
     if (formData.page1) {
@@ -145,22 +145,20 @@ function generatePDF(formData) {
     }
 
     // Check page break before Socials
-    if (yPosition > 250) {
+    if (yPosition > 270) {
         doc.addPage();
         yPosition = 20;
     } else {
-        yPosition += 10;
+        yPosition += 8;
     }
     
     // Social Networks
-    doc.setFontSize(14);
-    doc.setTextColor(51, 51, 51);
-    doc.text('Social Networks', 20, yPosition);
+    doc.setFontSize(13);
     doc.setTextColor(51, 51, 51);
     doc.text('Social Networks', 20, yPosition);
     
-    yPosition += 8;
-    doc.setFontSize(10);
+    yPosition += 6;
+    doc.setFontSize(9.5);
     doc.setTextColor(51, 51, 51);
     
     if (formData.page1) {
@@ -177,23 +175,28 @@ function generatePDF(formData) {
                 doc.setTextColor(102, 126, 234);
                 doc.text(formData.page1[social.key], 50, yPosition);
                 doc.setTextColor(51, 51, 51);
-                yPosition += 6;
+                yPosition += 5.5;
             }
         });
     } else {
         doc.setTextColor(153, 153, 153);
         doc.text('No social networks provided', 25, yPosition);
-        yPosition += 6;
+        yPosition += 5.5;
     }
     
-    yPosition += 10;
+    if (yPosition > 260) {
+        doc.addPage();
+        yPosition = 20;
+    } else {
+        yPosition += 8;
+    }
     
     // Backend Managers
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     doc.setTextColor(51, 51, 51);
     doc.text('Backend Managers', 20, yPosition);
     
-    yPosition += 10;
+    yPosition += 8;
     
     if (formData.page2 && formData.page2.managers && formData.page2.managers.length > 0) {
         formData.page2.managers.forEach((manager, index) => {
@@ -218,12 +221,12 @@ function generatePDF(formData) {
             fields.forEach(f => {
                 doc.text(f.l, 25, yPosition);
                 doc.text(f.v || 'N/A', 60, yPosition);
-                yPosition += 7;
+                yPosition += 6;
             });
 
             yPosition += 5;
             
-            if (yPosition > 250) {
+            if (yPosition > 270 && index < formData.page2.managers.length - 1) {
                 doc.addPage();
                 yPosition = 20;
             }
