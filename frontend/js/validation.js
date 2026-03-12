@@ -80,16 +80,16 @@ function showError(message, elementId) {
     return false;
 }
 
-// Validar que al menos una red social esté llena Y sea una URL válida
+// Validar que facebook esté lleno Y sea una URL válida
 function validateSocialNetworks() {
     const facebook = document.getElementById('facebook').value.trim();
     const instagram = document.getElementById('instagram').value.trim();
     const twitter = document.getElementById('twitter').value.trim();
     const other = document.getElementById('other').value.trim();
     
-    // Verificar que al menos una esté llena
-    if (!facebook && !instagram && !twitter && !other) {
-        return showError('Please complete at least one social network to continue.', 'facebook');
+    // Verificar que facebook esté lleno (es obligatorio)
+    if (!facebook) {
+        return showError('Please complete the Facebook field to continue.', 'facebook');
     }
     
     // Validar que las que estén llenas sean URLs válidas
