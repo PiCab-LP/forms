@@ -108,7 +108,7 @@ app.use('/api', globalLimiter);
 // Rate limiting específico para formularios (TEMPORALMENTE DESHABILITADO/ALTO)
 const formSubmitLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hora
-    max: 999999, // ← Sin límite temporal para testing
+    max: 5, // Límite de 5 envíos por hora por IP (aplicado para evitar spam)
     message: { 
         success: false, 
         message: 'Too many form submissions. Please try again in 1 hour.' 
@@ -117,7 +117,7 @@ const formSubmitLimiter = rateLimit({
 });
 
 
-// Rate limiting para admin (más flexible)
+// Rate limiting para admin (más flexible) //
 const adminLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutos
     max: 200,
@@ -127,6 +127,18 @@ const adminLimiter = rateLimit({
     }
 });
 
+// Rate limiting MUY ESTRICTO exclusivo para Login (Prevención de Fuerza Bruta)
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos de bloqueo
+    max: 5, // Máximo 5 intentos por IP
+    message: { 
+        success: false, 
+        message: 'Demasiados intentos de inicio de sesión fallidos. Por favor, inténtelo de nuevo en 15 minutos.' 
+    },
+    // Recomendación: Opcionalmente se puede saltar el límite si el login fue exitoso, 
+    // pero para mayor seguridad lo aplicamos a cada intento (exitoso o no).
+    skipSuccessfulRequests: false,
+});
 
 // ===========================
 // BODY PARSERS
@@ -170,7 +182,10 @@ app.get('/health', (req, res) => {
 });
 
 
-// Aplicar rutas de autenticación (sin rate limiter agresivo para login)
+// Aplicar limitador de fuerza bruta SOLO a la ruta de inicio de sesión
+app.use('/api/auth/login', loginLimiter);
+
+// Aplicar rutas de autenticación
 app.use('/api/auth', authRoutes); 
 
 // Aplicar rate limiter específico a formularios
