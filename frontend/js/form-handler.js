@@ -1,7 +1,7 @@
 // ==========================================
 // 1. CONFIGURACIÓN GLOBAL Y CAPTURA DE ARCHIVOS (A prueba de iOS/iPhone)
 // ==========================================
-const API_URL = 'https://forms-wliu.onrender.com/api/form';
+const API_URL = 'https://forms-production-a2c0.up.railway.app/api/form';
 
 function dataURLtoFile(dataurl, filename) {
     try {

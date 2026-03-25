@@ -1,4 +1,4 @@
-const API_URL = 'https://forms-wliu.onrender.com/api/admin';
+const API_URL = 'https://forms-production-a2c0.up.railway.app/api/admin';
 
 let currentPage = 1;
 let searchTimeout;
